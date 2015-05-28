@@ -10,7 +10,8 @@ caso la bacheca e' costituita da un programma server che accetta e
 processa sequenzialmente le richieste di uno o piu' processi client
 (residenti, in generale, su macchine diverse dal server). Un client deve
 fornire ad un utente le seguenti funzioni:
-1. Leggere tutti i messaggi sulla bacheca elettronica.
+
+> 1. Leggere tutti i messaggi sulla bacheca elettronica.
 2. Spedire un nuovo messaggio sulla bacheca elettronica.
 3. Rimuovere un messaggio dalla bacheca elettronica (se appartenente
 allo stesso utente che lo vuole cancellare, verifica da effettuare tramite un meccanismo di autenticazione a scelta dello studente).
