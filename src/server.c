@@ -1,6 +1,6 @@
 #include <sys/socket.h>
 
-/* The client */
+/* The server */
 int main(int argc, char **argv) {
 	int ds_sock;
 	ds_sock = socket(AF_INET, SOCK_STREAM, 0);
