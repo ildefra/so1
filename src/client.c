@@ -52,6 +52,8 @@ struct sockaddr_in make_clientsocket_address(const u_short sin_port) {
     
     my_addr.sin_family      = AF_INET;
 	my_addr.sin_port        = htons(sin_port);
+    
+    /* TODO: inet_addr is deprecated, use inet_pton instead */
 	my_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     
     return my_addr;

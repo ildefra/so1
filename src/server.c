@@ -111,6 +111,8 @@ int accept_incoming(const int ds_sock) {
         perror("accept()");
         exit(EXIT_FAILURE); /* TODO: is it right? */
     }
+    
+    /* TODO: inet_ntoa is deprecated, use inet_ntop instead */
     printf("incoming connection from %s\n", inet_ntoa(client_addr.sin_addr));
     return ds_sock_acc;
 }
