@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #define MY_PORT 2015
+#define BUFSIZE 1024
 
 /*
 includes usage:
@@ -17,7 +18,6 @@ includes usage:
 <unistd.h>  : closing sockets only
 */
 
-/* TODO: split more */
 /* client entry point */
 int main(int __unused argc, char __unused **argv) {
 	int ds_sock;
@@ -25,12 +25,11 @@ int main(int __unused argc, char __unused **argv) {
     struct sockaddr_in make_clientsocket_address(u_short);
     void connect_to(int, struct sockaddr_in);
     void close_sock(int);
+    void run_client(int);
     
     ds_sock = make_tcp_socket();
     connect_to(ds_sock, make_clientsocket_address(MY_PORT));
-    
-    /* TODO: do stuff */
-    
+    run_client(ds_sock);
 	close_sock(ds_sock);
     return EXIT_SUCCESS;
 }
@@ -38,12 +37,13 @@ int main(int __unused argc, char __unused **argv) {
 void connect_to(const int ds_sock, const struct sockaddr_in addr) {
     int connect_result;
     
-    printf("connecting to %s\n", inet_ntoa(addr.sin_addr));
+    printf("connecting to %s ...\n", inet_ntoa(addr.sin_addr));
     connect_result = connect(ds_sock, (struct sockaddr *) &addr, sizeof(addr));
     if (connect_result < 0) {
         perror("connect()");
         exit(EXIT_FAILURE);
     }
+    printf("connected\n");
 }
 
 /* creates an internet address structure for connecting to localhost on given port */
@@ -57,6 +57,18 @@ struct sockaddr_in make_clientsocket_address(const u_short sin_port) {
     return my_addr;
 }
 
+/* TODO: implement actual commands */
+void run_client(const int ds_sock) {
+    char buff[BUFSIZE];
+    
+    while (1) {
+        printf("\nplease enter a command: ");
+        scanf("%s", buff);
+        write(ds_sock, buff, BUFSIZE);
+        read(ds_sock, buff, BUFSIZE);
+        printf("server answered: %s\n", buff);
+    }
+}
 
 /* TODO: code clone in server.c */
 /* creates a TCP socket */

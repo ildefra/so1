@@ -9,7 +9,7 @@
 
 #define MY_PORT 2015
 #define LISTEN_BACKLOG 10
-#define MAX_READ 1024
+#define BUFSIZE 1024
 
 /*
 includes usage:
@@ -71,13 +71,13 @@ void run_server(const int ds_sock) {
     int ds_sock_acc;
     void do_listen(int);
     int accept_incoming(int);
-    void handle_client();
+    void handle_client(int);
 
     do_listen(ds_sock);
     while(1) {
         ds_sock_acc = accept_incoming(ds_sock);
         if (fork() == 0) {
-            handle_client();
+            handle_client(ds_sock_acc);
             close_sock(ds_sock_acc);
             exit(EXIT_SUCCESS);
         } else close_sock(ds_sock_acc);
@@ -114,11 +114,14 @@ int accept_incoming(const int ds_sock) {
     return ds_sock_acc;
 }
 
-
-void handle_client() {
+/* TODO: implement actual commands */
+void handle_client(const int ds_sock_acc) {
+    char buff[BUFSIZE];
     
-    /* logic goes here */
-    
+    while (1) {
+        read(ds_sock_acc, buff, BUFSIZE);
+        printf("client sent the following command: %s\n", buff);
+    }
 }
 
 
