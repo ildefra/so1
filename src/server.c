@@ -19,7 +19,7 @@ includes usage:
 void close_sock(int);
 
 /* the server */
-int main(int argc, char **argv) {
+int main(int __unused argc, char __unused **argv) {
 	int ds_sock;
     int make_tcp_socket();
     void bind_to_port(int, u_short);

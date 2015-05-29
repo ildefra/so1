@@ -1,3 +1,4 @@
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -16,8 +17,8 @@ includes usage:
 
 /* TODO: split more */
 /* the client */
-int main(int argc, char **argv) {
-	int ds_sock;
+int main(int __unused argc, char __unused **argv) {
+	int ds_sock, connect_result;
     struct sockaddr_in my_addr;
     int make_tcp_socket();
     void close_sock(int);
@@ -28,9 +29,16 @@ int main(int argc, char **argv) {
 	my_addr.sin_port        = htons(MY_PORT);
     my_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     
+    connect_result = connect(ds_sock, (struct sockaddr *) &my_addr, sizeof(my_addr));
+    if (connect_result < 0) {
+        perror("connect()");
+        exit(EXIT_FAILURE);
+    }
+    
     /* TODO: connect to server and do stuff */
     
 	close_sock(ds_sock);
+    return EXIT_SUCCESS;
 }
 
 /* TODO: code clone in server.c */
