@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 #define MY_PORT 2015
-#define BUFSIZE 1024
+#define MAX_MSGLEN 1024
 
 /*
 includes usage:
@@ -52,21 +52,24 @@ struct sockaddr_in make_clientsocket_address(const u_short sin_port) {
     
     my_addr.sin_family      = AF_INET;
 	my_addr.sin_port        = htons(sin_port);
-	my_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	my_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     
     return my_addr;
 }
 
 /* TODO: implement actual commands */
 void run_client(const int ds_sock) {
-    char buff[BUFSIZE];
+    char buff[MAX_MSGLEN + 1];  /* +1 for the null terminator */
+    int len;
     
     while (1) {
         printf("\nplease enter a command: ");
         scanf("%s", buff);
-        write(ds_sock, buff, BUFSIZE);
-        read(ds_sock, buff, BUFSIZE);
-        printf("server answered: %s\n", buff);
+        send(ds_sock, buff, MAX_MSGLEN, 0);
+        
+        len = recv(ds_sock, buff, MAX_MSGLEN, 0);
+        buff[len] = '\0';   /* null terminator must be added after reading */
+        printf("server answered: %s (%d bytes)\n", buff, len);
     }
 }
 

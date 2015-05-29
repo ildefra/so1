@@ -9,7 +9,7 @@
 
 #define MY_PORT 2015
 #define LISTEN_BACKLOG 10
-#define BUFSIZE 1024
+#define MAX_MSGLEN 1024
 
 /*
 includes usage:
@@ -40,12 +40,13 @@ int main(int __unused argc, char __unused **argv) {
 /* binds the given socket to the given port */
 void bind_to_port(const int ds_sock, const u_short sin_port) {
     int bind_result;
-    struct sockaddr_in my_addr;
+    struct sockaddr_in srv_addr;
     struct sockaddr_in make_serversocket_address(u_short);
     
-	my_addr = make_serversocket_address(sin_port);
+	srv_addr = make_serversocket_address(sin_port);
 	
-	bind_result = bind(ds_sock, (struct sockaddr *) &my_addr, sizeof(my_addr));
+	bind_result =
+            bind(ds_sock, (struct sockaddr *) &srv_addr, sizeof(srv_addr));
 	if (bind_result < 0) {
         perror("bind()");
         exit(EXIT_FAILURE);
@@ -57,13 +58,13 @@ void bind_to_port(const int ds_sock, const u_short sin_port) {
 
 /* creates an internet address structure for listening sockets to bind to */
 struct sockaddr_in make_serversocket_address(const u_short sin_port) {
-    struct sockaddr_in my_addr;
+    struct sockaddr_in addr;
     
-    my_addr.sin_family      = AF_INET;
-	my_addr.sin_port        = htons(sin_port);
-	my_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_family         = AF_INET;
+	addr.sin_port           = htons(sin_port);
+	addr.sin_addr.s_addr    = htonl(INADDR_ANY);
     
-    return my_addr;
+    return addr;
 }
 
 /* main server loop */
@@ -101,25 +102,27 @@ void do_listen(const int ds_sock) {
  */
 int accept_incoming(const int ds_sock) {
     int ds_sock_acc;
-    struct sockaddr_in addr;
+    struct sockaddr_in client_addr;
 	int addrlen;
 
-    addrlen = sizeof(addr);
-    ds_sock_acc = accept(ds_sock, (struct sockaddr *) &addr, &addrlen);
+    addrlen = sizeof(client_addr);
+    ds_sock_acc = accept(ds_sock, (struct sockaddr *) &client_addr, &addrlen);
     if (ds_sock_acc < 0) {
         perror("accept()");
         exit(EXIT_FAILURE); /* TODO: is it right? */
     }
-    printf("incoming connection from %s\n", inet_ntoa(addr.sin_addr));
+    printf("incoming connection from %s\n", inet_ntoa(client_addr.sin_addr));
     return ds_sock_acc;
 }
 
 /* TODO: implement actual commands */
 void handle_client(const int ds_sock_acc) {
-    char buff[BUFSIZE];
+    char buff[MAX_MSGLEN + 1];  /* +1 for the null terminator */
+    int len;
     
     while (1) {
-        read(ds_sock_acc, buff, BUFSIZE);
+        len = recv(ds_sock_acc, buff, MAX_MSGLEN, 0);
+        buff[len] = '\0';   /* null terminator must be added after reading */
         printf("client sent the following command: %s\n", buff);
     }
 }
