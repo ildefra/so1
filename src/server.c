@@ -104,7 +104,6 @@ int accept_incoming(const int ds_sock) {
     struct sockaddr_in addr;
 	int addrlen;
 
-    memset(&addr, 0, sizeof(addr)); 
     addrlen = sizeof(addr);
     ds_sock_acc = accept(ds_sock, (struct sockaddr *) &addr, &addrlen);
     if (ds_sock_acc < 0) {
