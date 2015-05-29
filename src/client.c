@@ -1,3 +1,4 @@
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 
 /*
 includes usage:
+<arpa/inet.h>:inet_ntoa only
 <stdio.h>   : error logging only
 <stdlib.h>  : exit statuses only
 <sys/types.h>:man says some OS could require it
@@ -16,30 +18,45 @@ includes usage:
 */
 
 /* TODO: split more */
-/* the client */
+/* client entry point */
 int main(int __unused argc, char __unused **argv) {
-	int ds_sock, connect_result;
-    struct sockaddr_in my_addr;
+	int ds_sock;
     int make_tcp_socket();
+    struct sockaddr_in make_clientsocket_address(u_short);
+    void connect_to(int, struct sockaddr_in);
     void close_sock(int);
     
     ds_sock = make_tcp_socket();
+    connect_to(ds_sock, make_clientsocket_address(MY_PORT));
     
-	my_addr.sin_family      = AF_INET;
-	my_addr.sin_port        = htons(MY_PORT);
-    my_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    
-    connect_result = connect(ds_sock, (struct sockaddr *) &my_addr, sizeof(my_addr));
-    if (connect_result < 0) {
-        perror("connect()");
-        exit(EXIT_FAILURE);
-    }
-    
-    /* TODO: connect to server and do stuff */
+    /* TODO: do stuff */
     
 	close_sock(ds_sock);
     return EXIT_SUCCESS;
 }
+
+void connect_to(const int ds_sock, const struct sockaddr_in addr) {
+    int connect_result;
+    
+    printf("connecting to %s\n", inet_ntoa(addr.sin_addr));
+    connect_result = connect(ds_sock, (struct sockaddr *) &addr, sizeof(addr));
+    if (connect_result < 0) {
+        perror("connect()");
+        exit(EXIT_FAILURE);
+    }
+}
+
+/* creates an internet address structure for connecting to localhost on given port */
+struct sockaddr_in make_clientsocket_address(const u_short sin_port) {
+    struct sockaddr_in my_addr;
+    
+    my_addr.sin_family      = AF_INET;
+	my_addr.sin_port        = htons(sin_port);
+	my_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    
+    return my_addr;
+}
+
 
 /* TODO: code clone in server.c */
 /* creates a TCP socket */
