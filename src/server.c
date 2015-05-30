@@ -1,3 +1,7 @@
+/*
+ * server.c -- server part of the OS1 assignment
+ */
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -7,7 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define MY_PORT 2015
+#define MY_PORT 3490
 #define LISTEN_BACKLOG 10
 #define MAX_MSGLEN 1024
 
