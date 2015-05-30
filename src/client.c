@@ -45,27 +45,24 @@ int main(int __unused argc, char __unused **argv) {
 /* TODO: split */
 /* connects to the given ip and port */
 int connect_to(const char* const ip, u_short port) {
-    struct addrinfo *servinfo, *p;
+    struct addrinfo *servinfo, *currinfo;
     int sockfd, connect_res;
-    char str[INET_ADDRSTRLEN]; /* TODO: it will break with IPv6 */
     void getserverinfo(const char* const, u_short, struct addrinfo**);
+    void print_connecting(const int, const struct sockaddr*);
     
     getserverinfo(ip, port, &servinfo);
     
     /* loop through all the results and connect to the first we can */
-    for(p = servinfo; p != NULL; p = p->ai_next) {
-        sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+    for(currinfo = servinfo; currinfo != NULL; currinfo = currinfo->ai_next) {
+        sockfd = socket(
+                currinfo->ai_family, currinfo->ai_socktype, currinfo->ai_protocol);
         if (sockfd == -1) {
             perror("socket()");
             continue;
         }
-
-        /* TODO: this line will break with IPv6 */
-        inet_ntop(p->ai_family, p->ai_addr, str, sizeof(str));
         
-        printf("connecting to %s ...\n", str);
-        
-        connect_res = connect(sockfd, p->ai_addr, p->ai_addrlen);
+        print_connecting(currinfo->ai_family, currinfo->ai_addr);
+        connect_res = connect(sockfd, currinfo->ai_addr, currinfo->ai_addrlen);
         if (connect_res == -1) {
             close_sock(sockfd);
             perror("connect()");
@@ -75,7 +72,7 @@ int connect_to(const char* const ip, u_short port) {
         break;
     }
 
-    if (p == NULL) {
+    if (currinfo == NULL) {
         fprintf(stderr, "failed to connect\n");
         exit(EXIT_FAILURE);
     }
@@ -112,6 +109,35 @@ struct addrinfo make_tcp_hints(void) {
     hints.ai_socktype   = SOCK_STREAM;
     
     return hints;
+}
+
+/* TODO: split! */
+/*
+ * just (!!) prints the "connecting to..." message, switching on the address
+ * family to get the right fields
+ */
+void print_connecting(const int ai_family, const struct sockaddr *ai_addr) {
+    void *addr;
+    char *ipver;
+    char ipstr[INET6_ADDRSTRLEN];
+
+    switch (ai_family) {
+        case AF_INET:
+            addr = &(((struct sockaddr_in*) ai_addr)->sin_addr);
+            ipver = "IPv4";
+            break;
+        case AF_INET6:
+            addr = &(((struct sockaddr_in6*) ai_addr)->sin6_addr);
+            ipver = "IPv6";
+            break;
+        default:
+            fprintf(
+                    stderr, "FATAL: unrecognized address family %d", ai_family);
+            exit(EXIT_FAILURE);
+    }
+
+    inet_ntop(ai_family, addr, ipstr, sizeof(ipstr));    
+    printf("connecting to %s address %s ...\n", ipver, ipstr);
 }
 
 
