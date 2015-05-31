@@ -1,5 +1,5 @@
 /*
- * server.c -- server part of the OS1 assignment
+ * client - Client part of the OS1 assignment
  */
 
 #include <arpa/inet.h>
@@ -18,7 +18,7 @@
 #define MAX_MSGLEN 1024
 
 /*
-includes usage:
+Includes usage:
 <arpa/inet.h>:inet_ntop only
 <netdb.h>   : getaddrinfo
 <stdio.h>   : error logging only
@@ -30,8 +30,10 @@ includes usage:
 
 void close_sock(int);
 
-/* client entry point */
-int main(int __unused argc, char __unused **argv) {
+/* Client entry point  */
+int
+main(int __unused argc, char __unused **argv)
+{
 	int sockfd;
     int connect_to(const char* const, u_short);
     void run_client(int);
@@ -44,10 +46,12 @@ int main(int __unused argc, char __unused **argv) {
 }
 
 /* 
- * gets all the addresses associated to the given ip and port and uses the first
- * available one
+ * Gets all the addresses associated to the given ip and port and connects to
+ * the first available one
  */
-int connect_to(const char* const ip, u_short port) {
+int
+connect_to(const char* const ip, const u_short port)
+{
     struct addrinfo *servinfo, *currinfo;
     int sockfd;
     void get_serverinfo(const char* const, u_short, struct addrinfo**);
@@ -59,7 +63,7 @@ int connect_to(const char* const ip, u_short port) {
         if (sockfd != -1) break;
     }
     if (currinfo == NULL) {
-        fprintf(stderr, "failed to connect\n");
+        fprintf(stderr, "Failed to connect\n");
         exit(EXIT_FAILURE);
     }
     freeaddrinfo(servinfo);
@@ -67,12 +71,14 @@ int connect_to(const char* const ip, u_short port) {
 }
 
 /*
- * performs the actual connection logic: creates a socket and uses it to connect
+ * Performs the actual connection logic: creates a socket and uses it to connect
  * to the specified address.
  * returns the file descriptor of the newly-created socket, or -1 if an error
  * occurred.
  */
-int do_connect(struct addrinfo *ainfo) {
+int
+do_connect(struct addrinfo *ainfo)
+{
 	int sockfd, connect_res;
 	void print_connecting(const int, const struct sockaddr*);
     
@@ -93,10 +99,12 @@ int do_connect(struct addrinfo *ainfo) {
 
 /* TODO: split! */
 /*
- * just (!!) prints the "connecting to..." message, switching on the address
- * family to get the right fields
+ * Just (!!) prints the "connecting to..." message, switching on the given
+ * address family to get the right fields from ai_addr
  */
-void print_connecting(const int ai_family, const struct sockaddr *ai_addr) {
+void
+print_connecting(const int ai_family, const struct sockaddr *ai_addr)
+{
     void *addr;
     char *ipver;
     char ipstr[INET6_ADDRSTRLEN];
@@ -112,24 +120,27 @@ void print_connecting(const int ai_family, const struct sockaddr *ai_addr) {
             break;
         default:
             fprintf(
-                    stderr, "FATAL: unrecognized address family %d", ai_family);
+                    stderr, "FATAL: Unrecognized address family %d", ai_family);
             exit(EXIT_FAILURE);
     }
 
     inet_ntop(ai_family, addr, ipstr, sizeof(ipstr));    
-    printf("connecting to %s address %s ...\n", ipver, ipstr);
+    printf("Connecting to %s address %s ...\n", ipver, ipstr);
 }
 
 
 /* TODO: split */
 /* TODO: implement actual commands */
-void run_client(const int sockfd) {
-    char buff[MAX_MSGLEN + 1];  /* +1 for the null terminator */
+/* Actual business logic of the client  */
+void
+run_client(const int sockfd)
+{
+    char buff[MAX_MSGLEN + 1];  /* +1 for the null terminator  */
     int len;
     
     printf("TRACE: inside run_client\n");
     while (1) {
-        printf("\nplease enter a command: ");
+        printf("\nPlease enter a command: ");
         scanf("%s", buff);
         send(sockfd, buff, MAX_MSGLEN, 0);
         
@@ -138,16 +149,17 @@ void run_client(const int sockfd) {
             perror("recv()");
             exit(EXIT_FAILURE);
         }
-        buff[len] = '\0';   /* null terminator must be added after reading */
-        printf("server answered: %s (%d bytes)\n", buff, len);
+        buff[len] = '\0';   /* null terminator must be added after reading  */
+        printf("Server answered: %s (%d bytes)\n", buff, len);
     }
 }
 
 
 /* code clone in server.c - BEGIN */
 
-void get_serverinfo(
-        const char* const ip, u_short port, struct addrinfo **servinfo) {
+void
+get_serverinfo(const char* const ip, u_short port, struct addrinfo **servinfo)
+{
     char port_str[PORT_MAXCHARS];
     struct addrinfo hints;
     int getaddrinfo_res;
@@ -164,7 +176,9 @@ void get_serverinfo(
     }
 }
 
-struct addrinfo make_hints(void) {
+struct addrinfo
+make_hints(void)
+{
     struct addrinfo hints;
     
     memset(&hints, 0, sizeof(hints));
@@ -175,12 +189,14 @@ struct addrinfo make_hints(void) {
 }
 
 
-void close_sock(const int sockfd) {
+void
+close_sock(const int sockfd)
+{
     int close_result;
     
     close_result = close(sockfd);
 	if (close_result < 0) {
-        fprintf(stderr, "could not close socket: exiting");
+        fprintf(stderr, "Could not close socket: exiting");
         exit(EXIT_FAILURE);
     }
 }
