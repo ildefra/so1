@@ -15,7 +15,10 @@
 #define SERVERIP "127.0.0.1"
 #define MY_PORT 3490
 #define PORT_MAXCHARS 5
+#define IPVER_CHARS 4
 #define MAX_MSGLEN 1024
+
+#define CONN_MSG "Connecting to %s address %s ...\n"
 
 /*
 Includes usage:
@@ -97,6 +100,7 @@ do_connect(struct addrinfo *ainfo)
     return sockfd;
 }
 
+
 /* TODO: split! */
 /*
  * Just (!!) prints the "connecting to..." message, switching on the given
@@ -106,17 +110,15 @@ void
 print_connecting(const int ai_family, const struct sockaddr *ai_addr)
 {
     void *addr;
-    char *ipver;
     char ipstr[INET6_ADDRSTRLEN];
-
+    const char* afamily_tostring(int);
+    
     switch (ai_family) {
         case AF_INET:
             addr = &(((struct sockaddr_in*) ai_addr)->sin_addr);
-            ipver = "IPv4";
             break;
         case AF_INET6:
             addr = &(((struct sockaddr_in6*) ai_addr)->sin6_addr);
-            ipver = "IPv6";
             break;
         default:
             fprintf(
@@ -125,7 +127,30 @@ print_connecting(const int ai_family, const struct sockaddr *ai_addr)
     }
 
     inet_ntop(ai_family, addr, ipstr, sizeof(ipstr));    
-    printf("Connecting to %s address %s ...\n", ipver, ipstr);
+    printf(CONN_MSG, afamily_tostring(ai_family), ipstr);
+}
+
+
+/*
+ * Returns a 4-character string representation of the given address family.
+ * Returns "????" on unknown families.
+ */
+const char*
+afamily_tostring(const int afamily)
+{
+    char *ipver = malloc(IPVER_CHARS + 1);
+    switch (afamily) {
+        case AF_INET:
+            ipver = "IPv4";
+            break;
+        case AF_INET6:
+            ipver = "IPV6";
+            break;
+        default:
+            ipver = "????";
+            break;
+    }
+    return ipver;
 }
 
 
