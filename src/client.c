@@ -12,13 +12,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SERVERIP "127.0.0.1"
 #define MY_PORT 3490
 #define PORT_MAXCHARS 5
-#define IPVER_CHARS 4
 #define MAX_MSGLEN 1024
-
-#define CONN_MSG "Connecting to %s address %s ...\n"
 
 /*
 Includes usage:
@@ -41,8 +37,10 @@ main(int __unused argc, char __unused **argv)
     int connect_to(const char* const, u_short);
     void run_client(int);
     
-    sockfd = connect_to(SERVERIP, MY_PORT);
-    printf("connected\n");
+    const char* const server_ip = "127.0.0.1";
+    
+    sockfd = connect_to(server_ip, MY_PORT);
+    printf("Connected\n");
     run_client(sockfd);
 	close_sock(sockfd);
     return EXIT_SUCCESS;
@@ -66,7 +64,7 @@ connect_to(const char* const ip, const u_short port)
         if (sockfd != -1) break;
     }
     if (currinfo == NULL) {
-        fprintf(stderr, "Failed to connect\n");
+        fprintf(stderr, "[FATAL] Failed to connect\n");
         exit(EXIT_FAILURE);
     }
     freeaddrinfo(servinfo);
@@ -87,14 +85,14 @@ do_connect(struct addrinfo *ainfo)
     
     sockfd = socket(ainfo->ai_family, ainfo->ai_socktype, ainfo->ai_protocol);
     if (sockfd == -1) {
-        perror("socket()");
+        perror("[WARN] socket()");
         return -1;
     }
     print_connecting(ainfo->ai_family, ainfo->ai_addr);
     connect_res = connect(sockfd, ainfo->ai_addr, ainfo->ai_addrlen);
     if (connect_res == -1) {
         close_sock(sockfd);
-        perror("connect()");
+        perror("[WARN] connect()");
         return -1;
     }
     return sockfd;
@@ -113,6 +111,9 @@ print_connecting(const int ai_family, const struct sockaddr *ai_addr)
     char ipstr[INET6_ADDRSTRLEN];
     const char* afamily_tostring(int);
     
+    const char* const err_msg   = "[FATAL] Unrecognized address family %d";
+    const char* const conn_msg  = "Connecting to %s address %s ...\n";
+    
     switch (ai_family) {
         case AF_INET:
             addr = &(((struct sockaddr_in*) ai_addr)->sin_addr);
@@ -121,13 +122,12 @@ print_connecting(const int ai_family, const struct sockaddr *ai_addr)
             addr = &(((struct sockaddr_in6*) ai_addr)->sin6_addr);
             break;
         default:
-            fprintf(
-                    stderr, "FATAL: Unrecognized address family %d", ai_family);
+            fprintf(stderr, err_msg, ai_family);
             exit(EXIT_FAILURE);
     }
 
     inet_ntop(ai_family, addr, ipstr, sizeof(ipstr));    
-    printf(CONN_MSG, afamily_tostring(ai_family), ipstr);
+    printf(conn_msg, afamily_tostring(ai_family), ipstr);
 }
 
 
@@ -138,13 +138,16 @@ print_connecting(const int ai_family, const struct sockaddr *ai_addr)
 const char*
 afamily_tostring(const int afamily)
 {
-    char *ipver = malloc(IPVER_CHARS + 1);
+    char *ipver;
+    const int ipver_chars = 4;
+    
+    ipver = malloc(ipver_chars + 1);
     switch (afamily) {
         case AF_INET:
             ipver = "IPv4";
             break;
         case AF_INET6:
-            ipver = "IPV6";
+            ipver = "IPv6";
             break;
         default:
             ipver = "????";
@@ -163,7 +166,7 @@ run_client(const int sockfd)
     char buff[MAX_MSGLEN + 1];  /* +1 for the null terminator  */
     int len;
     
-    printf("TRACE: inside run_client\n");
+    printf("[TRACE] run_client: sockfd = '%d'\n", sockfd);
     while (1) {
         printf("\nPlease enter a command: ");
         scanf("%s", buff);
@@ -221,7 +224,7 @@ close_sock(const int sockfd)
     
     close_result = close(sockfd);
 	if (close_result < 0) {
-        fprintf(stderr, "Could not close socket: exiting");
+        fprintf(stderr, "[FATAL] Could not close socket: exiting");
         exit(EXIT_FAILURE);
     }
 }
