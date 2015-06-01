@@ -1,33 +1,9 @@
-/*
- * client - Client part of the OS1 assignment
- */
+/* bel_client - Client part of the OS1 assignment  */
 
+#include "bel_common.h"
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#define MY_PORT 3490
-#define PORT_MAXCHARS 5
-#define MAX_MSGLEN 1024
-
-/*
-Includes usage:
-<arpa/inet.h>:inet_ntop only
-<netdb.h>   : getaddrinfo
-<stdio.h>   : error logging only
-<stdlib.h>  : exit statuses only
-<string.h>  : memset only
-<sys/types.h>:man says some OS could require it
-<unistd.h>  : closing sockets only
-*/
-
-void close_sock(int);
 
 /* Client entry point  */
 int
@@ -39,10 +15,10 @@ main(int __unused argc, char __unused **argv)
     
     const char* const server_ip = "127.0.0.1";
     
-    sockfd = connect_to(server_ip, MY_PORT);
+    sockfd = connect_to(server_ip, COMM_PORT);
     printf("Connected\n");
     run_client(sockfd);
-	close_sock(sockfd);
+	bel_close_sock(sockfd);
     return EXIT_SUCCESS;
 }
 
@@ -55,10 +31,9 @@ connect_to(const char* const ip, const u_short port)
 {
     struct addrinfo *servinfo, *currinfo;
     int sockfd;
-    void get_serverinfo(const char* const, u_short, struct addrinfo**);
     int do_connect(struct addrinfo*);
     
-    get_serverinfo(ip, port, &servinfo);
+    bel_get_serverinfo(ip, port, &servinfo);
     for(currinfo = servinfo; currinfo != NULL; currinfo = currinfo->ai_next) {
         sockfd = do_connect(currinfo);
         if (sockfd != -1) break;
@@ -91,7 +66,7 @@ do_connect(struct addrinfo *ainfo)
     print_connecting(ainfo->ai_family, ainfo->ai_addr);
     connect_res = connect(sockfd, ainfo->ai_addr, ainfo->ai_addrlen);
     if (connect_res == -1) {
-        close_sock(sockfd);
+        bel_close_sock(sockfd);
         perror("[WARN] connect()");
         return -1;
     }
@@ -109,7 +84,6 @@ print_connecting(const int ai_family, const struct sockaddr *ai_addr)
 {
     void *addr;
     char ipstr[INET6_ADDRSTRLEN];
-    const char* afamily_tostring(int);
     
     const char* const err_msg   = "[FATAL] Unrecognized address family %d";
     const char* const conn_msg  = "Connecting to %s address %s ...\n";
@@ -127,33 +101,7 @@ print_connecting(const int ai_family, const struct sockaddr *ai_addr)
     }
 
     inet_ntop(ai_family, addr, ipstr, sizeof(ipstr));    
-    printf(conn_msg, afamily_tostring(ai_family), ipstr);
-}
-
-
-/*
- * Returns a 4-character string representation of the given address family.
- * Returns "????" on unknown families.
- */
-const char*
-afamily_tostring(const int afamily)
-{
-    char *ipver;
-    const int ipver_chars = 4;
-    
-    ipver = malloc(ipver_chars + 1);
-    switch (afamily) {
-        case AF_INET:
-            ipver = "IPv4";
-            break;
-        case AF_INET6:
-            ipver = "IPv6";
-            break;
-        default:
-            ipver = "????";
-            break;
-    }
-    return ipver;
+    printf(conn_msg, bel_afamily_tostring(ai_family), ipstr);
 }
 
 
@@ -181,52 +129,3 @@ run_client(const int sockfd)
         printf("Server answered: %s (%d bytes)\n", buff, len);
     }
 }
-
-
-/* code clone in server.c - BEGIN */
-
-void
-get_serverinfo(const char* const ip, u_short port, struct addrinfo **servinfo)
-{
-    char port_str[PORT_MAXCHARS];
-    struct addrinfo hints;
-    int getaddrinfo_res;
-    struct addrinfo make_hints(void);
-    
-    printf("TRACE: inside get_serverinfo\n");
-    sprintf(port_str, "%d", port);
-    hints = make_hints();
-    if (ip == NULL) hints.ai_flags = AI_PASSIVE;
-    getaddrinfo_res = getaddrinfo(ip, port_str, &hints, servinfo);
-    if (getaddrinfo_res != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(getaddrinfo_res));
-        exit(EXIT_FAILURE);
-    }
-}
-
-struct addrinfo
-make_hints(void)
-{
-    struct addrinfo hints;
-    
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family     = AF_UNSPEC;
-    hints.ai_socktype   = SOCK_STREAM;
-    
-    return hints;
-}
-
-
-void
-close_sock(const int sockfd)
-{
-    int close_result;
-    
-    close_result = close(sockfd);
-	if (close_result < 0) {
-        fprintf(stderr, "[FATAL] Could not close socket: exiting");
-        exit(EXIT_FAILURE);
-    }
-}
-
-/* code clone in server.c - END */

@@ -1,33 +1,10 @@
-/*
- * server - server part of the OS1 assignment
- */
+/* bel_server - server part of the OS1 assignment  */
 
+#include "bel_common.h"
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
-
-#define MY_PORT 3490
-#define PORT_MAXCHARS 5
-#define MAX_MSGLEN 1024
-
-/*
-includes usage:
-<arpa/inet.h>:inet_ntoa only
-<netdb.h>   : getaddrinfo
-<stdio.h>   : error logging only
-<stdlib.h>  : exit statuses only
-<string.h>  : memset only
-<sys/types.h>:man says some OS could require it
-<unistd.h>  : closing sockets only
-*/
-
-void close_sock(int);
 
 /* server entry point */
 int main(int __unused argc, char __unused **argv) {
@@ -35,13 +12,13 @@ int main(int __unused argc, char __unused **argv) {
     int bind_to_port(u_short);
     void run_server(int);
     
-    sockfd = bind_to_port(MY_PORT);
+    sockfd = bind_to_port(COMM_PORT);
     
     /* still not listening though, but we cannot print this after the fact */
-    printf("server listening on port %d\n", MY_PORT);
+    printf("server listening on port %d\n", COMM_PORT);
     
     run_server(sockfd);
-	close_sock(sockfd);
+	bel_close_sock(sockfd);
     return EXIT_SUCCESS;
 }
 
@@ -52,10 +29,9 @@ int main(int __unused argc, char __unused **argv) {
 int bind_to_port(const u_short port) {
     struct addrinfo *servinfo, *currinfo;
     int sockfd;
-    void get_serverinfo(const char* const, u_short, struct addrinfo**);
     int do_bind(struct addrinfo*);
 
-    get_serverinfo(NULL, port, &servinfo);
+    bel_get_serverinfo(NULL, port, &servinfo);
     for(currinfo = servinfo; currinfo != NULL; currinfo = currinfo->ai_next) {
         sockfd = do_bind(currinfo);
         if (sockfd != -1) break;
@@ -93,7 +69,7 @@ int do_bind(struct addrinfo *ainfo)
     
     bind_res = bind(sockfd, ainfo->ai_addr, ainfo->ai_addrlen);
     if (bind_res == -1) {
-        close_sock(sockfd);
+        bel_close_sock(sockfd);
         perror("bind()");
         return -1;
     }
@@ -114,9 +90,9 @@ void run_server(const int sockfd) {
         sockfd_acc = accept_incoming(sockfd);
         if (fork() == 0) {
             handle_client(sockfd_acc);
-            close_sock(sockfd_acc);
+            bel_close_sock(sockfd_acc);
             exit(EXIT_SUCCESS);
-        } else close_sock(sockfd_acc);
+        } else bel_close_sock(sockfd_acc);
 	}
 }
 
@@ -141,6 +117,8 @@ int accept_incoming(const int sockfd) {
     struct sockaddr_storage client_addr;
 	int addrlen;
 
+    const char* const conn_msg = "incoming connection from %s\n";
+    
     addrlen = sizeof(client_addr);
     sockfd_acc = accept(sockfd, (struct sockaddr *) &client_addr, &addrlen);
     if (sockfd_acc < 0) {
@@ -149,7 +127,7 @@ int accept_incoming(const int sockfd) {
     }
     
     /* TODO: inet_ntoa is deprecated, use inet_ntop instead */
-    printf("incoming connection from %s\n", inet_ntoa(client_addr.sin_addr));
+    printf(conn_msg, inet_ntoa(((struct sockaddr_in *) &client_addr)->sin_addr));
     return sockfd_acc;
 }
 
@@ -169,47 +147,3 @@ void handle_client(const int sockfd_acc) {
         printf("client sent the following command: %s (%d bytes)\n", buff, len);
     }
 }
-
-
-/* code clone in client.c - BEGIN */
-
-void get_serverinfo(
-        const char* const ip, u_short port, struct addrinfo **servinfo) {
-    char port_str[PORT_MAXCHARS];
-    struct addrinfo hints;
-    int getaddrinfo_res;
-    struct addrinfo make_hints(void);
-    
-    printf("[TRACE] get_serverinfo\n");
-    sprintf(port_str, "%d", port);
-    hints = make_hints();
-    if (ip == NULL) hints.ai_flags = AI_PASSIVE;
-    getaddrinfo_res = getaddrinfo(ip, port_str, &hints, servinfo);
-    if (getaddrinfo_res != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(getaddrinfo_res));
-        exit(EXIT_FAILURE);
-    }
-}
-
-struct addrinfo make_hints(void) {
-    struct addrinfo hints;
-    
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family     = AF_UNSPEC;
-    hints.ai_socktype   = SOCK_STREAM;
-    
-    return hints;
-}
-
-
-void close_sock(const int sockfd) {
-    int close_result;
-    
-    close_result = close(sockfd);
-	if (close_result < 0) {
-        fprintf(stderr, "could not close socket: exiting");
-        exit(EXIT_FAILURE);
-    }
-}
-
-/* code clone in client.c - END */
