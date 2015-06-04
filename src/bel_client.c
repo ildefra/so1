@@ -1,7 +1,6 @@
 /* bel_client - Client part of the OS1 assignment  */
 
 #include "bel_common.h"
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -46,6 +45,7 @@ connect_to(const char* const ip, const u_short port)
     return sockfd;
 }
 
+/* TODO: split! */
 /*
  * Performs the actual connection logic: creates a socket and uses it to connect
  * to the specified address.
@@ -56,14 +56,13 @@ int
 do_connect(struct addrinfo *ainfo)
 {
 	int sockfd, connect_res;
-	void print_connecting(const int, const struct sockaddr*);
+    const char* const conn_msg  = "Connecting to %s address %s ...\n";
+	/* void print_connecting(const int, const struct sockaddr*); */
     
-    sockfd = socket(ainfo->ai_family, ainfo->ai_socktype, ainfo->ai_protocol);
-    if (sockfd == -1) {
-        perror("[WARN] socket()");
-        return -1;
-    }
-    print_connecting(ainfo->ai_family, ainfo->ai_addr);
+    sockfd = bel_open_sock(*ainfo);
+    if (sockfd == -1) return -1;
+    
+    printf(conn_msg, bel_afamily_tostring(ainfo->ai_family), bel_inetaddress_tostring(ainfo->ai_family, ainfo->ai_addr));
     connect_res = connect(sockfd, ainfo->ai_addr, ainfo->ai_addrlen);
     if (connect_res == -1) {
         bel_close_sock(sockfd);
@@ -71,37 +70,6 @@ do_connect(struct addrinfo *ainfo)
         return -1;
     }
     return sockfd;
-}
-
-
-/* TODO: split! */
-/*
- * Just (!!) prints the "connecting to..." message, switching on the given
- * address family to get the right fields from ai_addr
- */
-void
-print_connecting(const int ai_family, const struct sockaddr *ai_addr)
-{
-    void *addr;
-    char ipstr[INET6_ADDRSTRLEN];
-    
-    const char* const err_msg   = "[FATAL] Unrecognized address family %d";
-    const char* const conn_msg  = "Connecting to %s address %s ...\n";
-    
-    switch (ai_family) {
-        case AF_INET:
-            addr = &(((struct sockaddr_in*) ai_addr)->sin_addr);
-            break;
-        case AF_INET6:
-            addr = &(((struct sockaddr_in6*) ai_addr)->sin6_addr);
-            break;
-        default:
-            fprintf(stderr, err_msg, ai_family);
-            exit(EXIT_FAILURE);
-    }
-
-    inet_ntop(ai_family, addr, ipstr, sizeof(ipstr));    
-    printf(conn_msg, bel_afamily_tostring(ai_family), ipstr);
 }
 
 

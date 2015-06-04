@@ -44,6 +44,7 @@ int bind_to_port(const u_short port) {
     return sockfd;
 }
 
+/* TODO: split! */
 /*
  * performs the actual binding logic: creates a socket and uses it to bind to
  * the specified address.
@@ -53,12 +54,10 @@ int bind_to_port(const u_short port) {
 int do_bind(struct addrinfo *ainfo)
 {
 	int sockfd, yes = 1, setsockopt_res, bind_res;
+    const char* const bind_msg  = "Binding to %s address %s ...\n";
     
-    sockfd = socket(ainfo->ai_family, ainfo->ai_socktype, ainfo->ai_protocol);
-    if (sockfd == -1) {
-        perror("socket()");
-        return -1;
-    }
+    sockfd = bel_open_sock(*ainfo);
+    if (sockfd == -1) return -1;
     
     setsockopt_res =
             setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
@@ -67,6 +66,7 @@ int do_bind(struct addrinfo *ainfo)
         exit(EXIT_FAILURE);
     }
     
+    printf(bind_msg, bel_afamily_tostring(ainfo->ai_family), bel_inetaddress_tostring(ainfo->ai_family, ainfo->ai_addr));
     bind_res = bind(sockfd, ainfo->ai_addr, ainfo->ai_addrlen);
     if (bind_res == -1) {
         bel_close_sock(sockfd);

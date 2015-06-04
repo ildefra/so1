@@ -1,6 +1,7 @@
 /* bel_common - Functions shared by bel_client and bel_server  */
 
 #include "bel_common.h"
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +33,37 @@ bel_afamily_tostring(const int afamily)
             break;
     }
     return ipver;
+}
+
+
+/* TODO: split! */
+/* TODO: doc is not up to date */
+/* FIXME: does not work!? */
+/*
+ * Just (!!) prints the "connecting to..." message, switching on the given
+ * address family to get the right fields from ai_addr
+ */
+const char*
+bel_inetaddress_tostring(const int ai_family, const struct sockaddr *ai_addr)
+{
+    void *addr;
+    char *ipstr;
+    const char* const err_msg   = "[FATAL] Unrecognized address family %d";
+    
+    ipstr = malloc(INET6_ADDRSTRLEN + 1);
+    switch (ai_family) {
+        case AF_INET:
+            addr = &(((struct sockaddr_in*) ai_addr)->sin_addr);
+            break;
+        case AF_INET6:
+            addr = &(((struct sockaddr_in6*) ai_addr)->sin6_addr);
+            break;
+        default:
+            fprintf(stderr, err_msg, ai_family);
+            exit(EXIT_FAILURE);
+    }
+    inet_ntop(ai_family, addr, ipstr, sizeof(ipstr));
+    return ipstr;
 }
 
 
@@ -71,6 +103,19 @@ make_hints(void)
     return hints;
 }
 
+
+/*
+ * Creates a new socket and returns its file descriptor, or -1 in case of error
+ */
+int
+bel_open_sock(const struct addrinfo ainfo)
+{
+    int sockfd;
+    
+    sockfd = socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
+    if (sockfd == -1) perror("[WARN] socket()");
+    return sockfd;
+}
 
 /* Closes the given socket. Exits on error  */
 void
