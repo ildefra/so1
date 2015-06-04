@@ -1,7 +1,6 @@
 /* bel_common - Functions shared by bel_client and bel_server  */
 
 #include "bel_common.h"
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,34 +35,28 @@ bel_afamily_tostring(const int afamily)
 }
 
 
-/* TODO: split! */
-/* TODO: doc is not up to date */
-/* FIXME: does not work!? */
 /*
- * Just (!!) prints the "connecting to..." message, switching on the given
- * address family to get the right fields from ai_addr
+ * Gets the internet address from the given sockaddr, switching between IPv4 and
+ * IPv6 depending on the address family (IPv4 or IPv6). Returns NULL on error
  */
-const char*
-bel_inetaddress_tostring(const int ai_family, const struct sockaddr *ai_addr)
+void*
+bel_get_inaddr(const struct sockaddr *sa)
 {
-    void *addr;
-    char *ipstr;
-    const char* const err_msg   = "[FATAL] Unrecognized address family %d";
+    void *in_addr;
+    const char* const err_msg   = "[ERROR] Unrecognized address family %d";
     
-    ipstr = malloc(INET6_ADDRSTRLEN + 1);
-    switch (ai_family) {
+    switch (sa->sa_family) {
         case AF_INET:
-            addr = &(((struct sockaddr_in*) ai_addr)->sin_addr);
+            in_addr = &(((struct sockaddr_in*) sa)->sin_addr);
             break;
         case AF_INET6:
-            addr = &(((struct sockaddr_in6*) ai_addr)->sin6_addr);
+            in_addr = &(((struct sockaddr_in6*) sa)->sin6_addr);
             break;
         default:
-            fprintf(stderr, err_msg, ai_family);
-            exit(EXIT_FAILURE);
+            fprintf(stderr, err_msg, sa->sa_family);
+            in_addr = NULL;
     }
-    inet_ntop(ai_family, addr, ipstr, sizeof(ipstr));
-    return ipstr;
+    return in_addr;
 }
 
 

@@ -1,6 +1,7 @@
 /* bel_client - Client part of the OS1 assignment  */
 
 #include "bel_common.h"
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -12,7 +13,7 @@ main(int __unused argc, char __unused **argv)
     int connect_to(const char* const, u_short);
     void run_client(int);
     
-    const char* const server_ip = "127.0.0.1";
+    const char* const server_ip = "localhost";
     
     sockfd = connect_to(server_ip, COMM_PORT);
     printf("Connected\n");
@@ -56,13 +57,12 @@ int
 do_connect(struct addrinfo *ainfo)
 {
 	int sockfd, connect_res;
-    const char* const conn_msg  = "Connecting to %s address %s ...\n";
-	/* void print_connecting(const int, const struct sockaddr*); */
+	void print_connecting(const struct sockaddr*);
     
     sockfd = bel_open_sock(*ainfo);
     if (sockfd == -1) return -1;
     
-    printf(conn_msg, bel_afamily_tostring(ainfo->ai_family), bel_inetaddress_tostring(ainfo->ai_family, ainfo->ai_addr));
+    print_connecting(ainfo->ai_addr);
     connect_res = connect(sockfd, ainfo->ai_addr, ainfo->ai_addrlen);
     if (connect_res == -1) {
         bel_close_sock(sockfd);
@@ -70,6 +70,17 @@ do_connect(struct addrinfo *ainfo)
         return -1;
     }
     return sockfd;
+}
+
+/* Prints the "connecting to..." message  */
+void
+print_connecting(const struct sockaddr *sa)
+{
+    char ipstr[INET6_ADDRSTRLEN];
+    const char* const conn_msg  = "Connecting to %s address %s ...\n";
+    
+    inet_ntop(sa->sa_family, bel_get_inaddr(sa), ipstr, sizeof(ipstr));
+    printf(conn_msg, bel_afamily_tostring(sa->sa_family), ipstr);
 }
 
 

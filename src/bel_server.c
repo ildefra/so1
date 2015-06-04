@@ -44,7 +44,6 @@ int bind_to_port(const u_short port) {
     return sockfd;
 }
 
-/* TODO: split! */
 /*
  * performs the actual binding logic: creates a socket and uses it to bind to
  * the specified address.
@@ -53,20 +52,15 @@ int bind_to_port(const u_short port) {
  */
 int do_bind(struct addrinfo *ainfo)
 {
-	int sockfd, yes = 1, setsockopt_res, bind_res;
-    const char* const bind_msg  = "Binding to %s address %s ...\n";
+	int sockfd, bind_res;
+    void set_reuseaddr(const int);
+    void print_binding(const struct sockaddr*);
     
     sockfd = bel_open_sock(*ainfo);
     if (sockfd == -1) return -1;
     
-    setsockopt_res =
-            setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-    if (setsockopt_res) {
-        perror("setsockopt()");
-        exit(EXIT_FAILURE);
-    }
-    
-    printf(bind_msg, bel_afamily_tostring(ainfo->ai_family), bel_inetaddress_tostring(ainfo->ai_family, ainfo->ai_addr));
+    set_reuseaddr(sockfd);
+    print_binding(ainfo->ai_addr);
     bind_res = bind(sockfd, ainfo->ai_addr, ainfo->ai_addrlen);
     if (bind_res == -1) {
         bel_close_sock(sockfd);
@@ -74,6 +68,34 @@ int do_bind(struct addrinfo *ainfo)
         return -1;
     }
     return sockfd;
+}
+
+/*
+ * Used before bind to force binding (use "man setsockopt" for details). If this
+ * call fails something bad happened, so we exit the program
+ */
+void
+set_reuseaddr(const int sockfd) {
+    int yes = 1, setsockopt_res;
+    
+    setsockopt_res =
+            setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+    if (setsockopt_res == -1) {
+        perror("setsockopt()");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+/* Prints the "binding to..." message  */
+void
+print_binding(const struct sockaddr *sa)
+{
+    char ipstr[INET6_ADDRSTRLEN];
+    const char* const bind_msg  = "Binding to %s address %s ...\n";
+    
+    inet_ntop(sa->sa_family, bel_get_inaddr(sa), ipstr, sizeof(ipstr));
+    printf(bind_msg, bel_afamily_tostring(sa->sa_family), ipstr);
 }
 
 

@@ -10,7 +10,7 @@ extern void bel_get_serverinfo(
 		const char* const, const u_short, struct addrinfo**);
 
 extern const char* bel_afamily_tostring(const int);
-extern const char* bel_inetaddress_tostring(const int, const struct sockaddr*);
+extern void* bel_get_inaddr(const struct sockaddr *sa);
 
 extern int bel_open_sock(const struct addrinfo);
 extern void bel_close_sock(const int);
