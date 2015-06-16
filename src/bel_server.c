@@ -118,7 +118,7 @@ void run_server(const int sockfd) {
 	}
 }
 
-/* listen() syscall, with error handling */
+/* performs the listen() syscall, and exits the program if it fails */
 void do_listen(const int sockfd) {
     int listen_result;
     const int listen_backlog = 10;
@@ -135,9 +135,8 @@ void do_listen(const int sockfd) {
  * returns the file descriptor of the socket created to serve the request
  */
 int accept_incoming(const int sockfd) {
-    int sockfd_acc;
+    int addrlen, sockfd_acc;
     struct sockaddr_storage client_addr;
-	int addrlen;
 
     const char* const conn_msg = "incoming connection from %s\n";
     

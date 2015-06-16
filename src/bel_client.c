@@ -46,7 +46,6 @@ connect_to(const char* const ip, const u_short port)
     return sockfd;
 }
 
-/* TODO: split! */
 /*
  * Performs the actual connection logic: creates a socket and uses it to connect
  * to the specified address.
@@ -57,12 +56,12 @@ int
 do_connect(struct addrinfo *ainfo)
 {
 	int sockfd, connect_res;
-	void print_connecting(const struct sockaddr*);
+	const char* const conn_msg  = "Connecting to ";
     
     sockfd = bel_open_sock(*ainfo);
     if (sockfd == -1) return -1;
     
-    print_connecting(ainfo->ai_addr);
+    bel_print_address(conn_msg, ainfo->ai_addr);
     connect_res = connect(sockfd, ainfo->ai_addr, ainfo->ai_addrlen);
     if (connect_res == -1) {
         bel_close_sock(sockfd);
@@ -72,16 +71,50 @@ do_connect(struct addrinfo *ainfo)
     return sockfd;
 }
 
-/* Prints the "connecting to..." message  */
+
+
+/*
+ * prints a string representation of the given socket address, prepending the
+ * given prefix
+ */
 void
-print_connecting(const struct sockaddr *sa)
+bel_print_address(const char* const prefix, const struct sockaddr *sa)
 {
     char ipstr[INET6_ADDRSTRLEN];
-    const char* const conn_msg  = "Connecting to %s address %s ...\n";
+    char* full_template;
+    const char* const addr_template = "%s address %s\n";
     
     inet_ntop(sa->sa_family, bel_get_inaddr(sa), ipstr, sizeof(ipstr));
-    printf(conn_msg, bel_afamily_tostring(sa->sa_family), ipstr);
+    full_template = bel_concat(prefix, addr_template);
+    printf(full_template, bel_afamily_tostring(sa->sa_family), ipstr);
+    free(full_template);
 }
+
+/*
+ * concatenates the two given strings on a newly-allocated block of memory. It
+ * is responsibility of the caller to free the memory when it is no longer
+ * needed.
+ */
+char*
+bel_concat(char *s1, char *s2)
+{
+    size_t len1, len2;
+    char *result;
+    
+    len1 = strlen(s1);
+    len2 = strlen(s2);
+    *result = malloc(len1 + len2 + 1);  /* +1 for the zero terminator  */
+    
+    /* TODO: check for errors in malloc  */
+    
+    memcpy(result, s1, len1);
+    
+    /* +1 in order to also copy the zero terminator  */
+    memcpy(result + len1, s2, len2 + 1);
+    
+    return result;
+}
+
 
 
 /* TODO: split */

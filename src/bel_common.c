@@ -62,7 +62,7 @@ bel_get_inaddr(const struct sockaddr *sa)
 
 /*
  * Fills servinfo with the list of internet addresses associated with the given
- * ip and port
+ * ip and port. Exits program on error!
  */
 void
 bel_get_serverinfo(
