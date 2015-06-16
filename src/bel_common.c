@@ -1,6 +1,7 @@
 /* bel_common - Functions shared by bel_client and bel_server  */
 
 #include "bel_common.h"
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,11 +11,56 @@
 
 
 /*
+ * prints a string representation of the given socket address, prepending the
+ * given prefix
+ */
+void
+bel_print_address(const char* const prefix, const struct sockaddr *sa)
+{
+    char ipstr[INET6_ADDRSTRLEN];
+    char* full_template;
+    const char* const addr_template = "%s address %s\n";
+    
+    void* get_inaddr(const struct sockaddr *sa);
+    char* concat(const char* const s1, const char* const s2);
+    const char* afamily_tostring(const int);
+    
+    inet_ntop(sa->sa_family, get_inaddr(sa), ipstr, sizeof(ipstr));
+    full_template = concat(prefix, addr_template);
+    printf(full_template, afamily_tostring(sa->sa_family), ipstr);
+    free(full_template);
+}
+
+/*
+ * concatenates the two given strings on a newly-allocated block of memory. It
+ * is responsibility of the caller to free the memory when it is no longer
+ * needed. Returns NULL if malloc() fails
+ */
+char*
+concat(const char* const s1, const char* const s2)
+{
+    size_t len1, len2;
+    char *result;
+    
+    len1 = strlen(s1);
+    len2 = strlen(s2);
+    result = malloc(len1 + len2 + 1);  /* +1 for the zero terminator  */
+    if (result == NULL) return NULL;
+    
+    memcpy(result, s1, len1);
+    
+    /* +1 in order to also copy the zero terminator  */
+    memcpy(result + len1, s2, len2 + 1);
+    
+    return result;
+}
+
+/*
  * Returns a 4-character string representation of the given address family.
  * Returns "????" on unknown families.
  */
 const char*
-bel_afamily_tostring(const int afamily)
+afamily_tostring(const int afamily)
 {
     char *ipver;
     const int ipver_chars = 4;
@@ -34,13 +80,12 @@ bel_afamily_tostring(const int afamily)
     return ipver;
 }
 
-
 /*
  * Gets the internet address from the given sockaddr, switching between IPv4 and
  * IPv6 depending on the address family (IPv4 or IPv6). Returns NULL on error
  */
 void*
-bel_get_inaddr(const struct sockaddr *sa)
+get_inaddr(const struct sockaddr *sa)
 {
     void *in_addr;
     const char* const err_msg   = "[ERROR] Unrecognized address family %d";

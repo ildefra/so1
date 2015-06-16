@@ -1,7 +1,6 @@
 /* bel_server - server part of the OS1 assignment  */
 
 #include "bel_common.h"
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -53,14 +52,14 @@ int bind_to_port(const u_short port) {
 int do_bind(struct addrinfo *ainfo)
 {
 	int sockfd, bind_res;
+    const char* const bind_msg  = "Binding to ";
     void set_reuseaddr(const int);
-    void print_binding(const struct sockaddr*);
     
     sockfd = bel_open_sock(*ainfo);
     if (sockfd == -1) return -1;
-    
     set_reuseaddr(sockfd);
-    print_binding(ainfo->ai_addr);
+    
+    bel_print_address(bind_msg, ainfo->ai_addr);
     bind_res = bind(sockfd, ainfo->ai_addr, ainfo->ai_addrlen);
     if (bind_res == -1) {
         bel_close_sock(sockfd);
@@ -84,18 +83,6 @@ set_reuseaddr(const int sockfd) {
         perror("setsockopt()");
         exit(EXIT_FAILURE);
     }
-}
-
-
-/* Prints the "binding to..." message  */
-void
-print_binding(const struct sockaddr *sa)
-{
-    char ipstr[INET6_ADDRSTRLEN];
-    const char* const bind_msg  = "Binding to %s address %s ...\n";
-    
-    inet_ntop(sa->sa_family, bel_get_inaddr(sa), ipstr, sizeof(ipstr));
-    printf(bind_msg, bel_afamily_tostring(sa->sa_family), ipstr);
 }
 
 
@@ -138,7 +125,7 @@ int accept_incoming(const int sockfd) {
     int addrlen, sockfd_acc;
     struct sockaddr_storage client_addr;
 
-    const char* const conn_msg = "incoming connection from %s\n";
+    const char* const conn_msg = "incoming connection from ";
     
     addrlen = sizeof(client_addr);
     sockfd_acc = accept(sockfd, (struct sockaddr *) &client_addr, &addrlen);
@@ -146,9 +133,8 @@ int accept_incoming(const int sockfd) {
         perror("accept()");
         exit(EXIT_FAILURE); /* TODO: is it right? */
     }
+    bel_print_address(conn_msg, (struct sockaddr *) &client_addr);
     
-    /* TODO: inet_ntoa is deprecated, use inet_ntop instead */
-    printf(conn_msg, inet_ntoa(((struct sockaddr_in *) &client_addr)->sin_addr));
     return sockfd_acc;
 }
 

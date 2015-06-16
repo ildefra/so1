@@ -1,7 +1,6 @@
 /* bel_client - Client part of the OS1 assignment  */
 
 #include "bel_common.h"
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -70,51 +69,6 @@ do_connect(struct addrinfo *ainfo)
     }
     return sockfd;
 }
-
-
-
-/*
- * prints a string representation of the given socket address, prepending the
- * given prefix
- */
-void
-bel_print_address(const char* const prefix, const struct sockaddr *sa)
-{
-    char ipstr[INET6_ADDRSTRLEN];
-    char* full_template;
-    const char* const addr_template = "%s address %s\n";
-    
-    inet_ntop(sa->sa_family, bel_get_inaddr(sa), ipstr, sizeof(ipstr));
-    full_template = bel_concat(prefix, addr_template);
-    printf(full_template, bel_afamily_tostring(sa->sa_family), ipstr);
-    free(full_template);
-}
-
-/*
- * concatenates the two given strings on a newly-allocated block of memory. It
- * is responsibility of the caller to free the memory when it is no longer
- * needed.
- */
-char*
-bel_concat(char *s1, char *s2)
-{
-    size_t len1, len2;
-    char *result;
-    
-    len1 = strlen(s1);
-    len2 = strlen(s2);
-    *result = malloc(len1 + len2 + 1);  /* +1 for the zero terminator  */
-    
-    /* TODO: check for errors in malloc  */
-    
-    memcpy(result, s1, len1);
-    
-    /* +1 in order to also copy the zero terminator  */
-    memcpy(result + len1, s2, len2 + 1);
-    
-    return result;
-}
-
 
 
 /* TODO: split */
