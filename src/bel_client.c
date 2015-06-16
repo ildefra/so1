@@ -15,7 +15,7 @@ main(int __unused argc, char __unused **argv)
     const char* const server_ip = "localhost";
     
     sockfd = connect_to(server_ip, COMM_PORT);
-    printf("Connected\n");
+    printf("[INFO] connected\n");
     run_client(sockfd);
 	bel_close_sock(sockfd);
     return EXIT_SUCCESS;
@@ -38,7 +38,7 @@ connect_to(const char* const ip, const u_short port)
         if (sockfd != -1) break;
     }
     if (currinfo == NULL) {
-        fprintf(stderr, "[FATAL] Failed to connect\n");
+        fprintf(stderr, "[FATAL] Failed to connect: exiting\n");
         exit(EXIT_FAILURE);
     }
     freeaddrinfo(servinfo);
@@ -55,7 +55,7 @@ int
 do_connect(struct addrinfo *ainfo)
 {
 	int sockfd, connect_res;
-	const char* const conn_msg  = "Connecting to ";
+	const char* const conn_msg  = "[INFO] connecting to ";
     
     sockfd = bel_open_sock(*ainfo);
     if (sockfd == -1) return -1;
@@ -88,7 +88,7 @@ run_client(const int sockfd)
         
         len = recv(sockfd, buff, MAX_MSGLEN, 0);
         if (len == -1) {
-            perror("recv()");
+            perror("[FATAL] recv()");
             exit(EXIT_FAILURE);
         }
         buff[len] = '\0';   /* null terminator must be added after reading  */

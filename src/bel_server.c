@@ -14,7 +14,7 @@ int main(int __unused argc, char __unused **argv) {
     sockfd = bind_to_port(COMM_PORT);
     
     /* still not listening though, but we cannot print this after the fact */
-    printf("server listening on port %d\n", COMM_PORT);
+    printf("[INFO] server listening on port %d\n", COMM_PORT);
     
     run_server(sockfd);
 	bel_close_sock(sockfd);
@@ -36,7 +36,7 @@ int bind_to_port(const u_short port) {
         if (sockfd != -1) break;
     }
     if (currinfo == NULL) {
-        fprintf(stderr, "failed to bind\n");
+        fprintf(stderr, "[FATAL] failed to bind: exiting\n");
         exit(EXIT_FAILURE);
     }
     freeaddrinfo(servinfo);
@@ -52,7 +52,7 @@ int bind_to_port(const u_short port) {
 int do_bind(struct addrinfo *ainfo)
 {
 	int sockfd, bind_res;
-    const char* const bind_msg  = "Binding to ";
+    const char* const bind_msg  = "[INFO] binding to ";
     void set_reuseaddr(const int);
     
     sockfd = bel_open_sock(*ainfo);
@@ -80,7 +80,7 @@ set_reuseaddr(const int sockfd) {
     setsockopt_res =
             setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
     if (setsockopt_res == -1) {
-        perror("setsockopt()");
+        perror("[FATAL] setsockopt()");
         exit(EXIT_FAILURE);
     }
 }
@@ -93,7 +93,7 @@ void run_server(const int sockfd) {
     int accept_incoming(int);
     void handle_client(int);
 
-    printf("TRACE: inside run_server\n");
+    printf("[TRACE] run_server: sockfd = '%d'\n", sockfd);
     do_listen(sockfd);
     while(1) {
         sockfd_acc = accept_incoming(sockfd);
@@ -101,7 +101,8 @@ void run_server(const int sockfd) {
             handle_client(sockfd_acc);
             bel_close_sock(sockfd_acc);
             exit(EXIT_SUCCESS);
-        } else bel_close_sock(sockfd_acc);
+        }
+        bel_close_sock(sockfd_acc);
 	}
 }
 
@@ -112,7 +113,7 @@ void do_listen(const int sockfd) {
     
     listen_result = listen(sockfd, listen_backlog);
 	if (listen_result < 0) {
-        perror("listen()");
+        perror("[FATAL] listen()");
         exit(EXIT_FAILURE);
     }
 }
@@ -125,7 +126,7 @@ int accept_incoming(const int sockfd) {
     int addrlen, sockfd_acc;
     struct sockaddr_storage client_addr;
 
-    const char* const conn_msg = "incoming connection from ";
+    const char* const conn_msg = "[INFO] incoming connection from ";
     
     addrlen = sizeof(client_addr);
     sockfd_acc = accept(sockfd, (struct sockaddr *) &client_addr, &addrlen);
@@ -147,7 +148,7 @@ void handle_client(const int sockfd_acc) {
     while (1) {
         len = recv(sockfd_acc, buff, MAX_MSGLEN, 0);
         if (len == -1) {
-            perror("recv()");
+            perror("[FATAL] recv()");
             exit(EXIT_FAILURE);
         }
         buff[len] = '\0';   /* null terminator must be added after reading */

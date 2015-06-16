@@ -88,7 +88,7 @@ void*
 get_inaddr(const struct sockaddr *sa)
 {
     void *in_addr;
-    const char* const err_msg   = "[ERROR] Unrecognized address family %d";
+    const char* const err_msg = "[ERROR] unrecognized address family %d";
     
     switch (sa->sa_family) {
         case AF_INET:
@@ -116,15 +116,17 @@ bel_get_serverinfo(
     char port_str[PORT_MAXCHARS];
     struct addrinfo hints;
     int getaddrinfo_res;
+    const char* const err_msg = "[FATAL] getaddrinfo(): %s\n";
+    
     struct addrinfo make_hints(void);
     
-    printf("TRACE: inside get_serverinfo\n");
+    printf("[TRACE] inside bel_get_serverinfo\n");
     sprintf(port_str, "%d", port);
     hints = make_hints();
     if (ip == NULL) hints.ai_flags = AI_PASSIVE;
     getaddrinfo_res = getaddrinfo(ip, port_str, &hints, servinfo);
     if (getaddrinfo_res != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(getaddrinfo_res));
+        fprintf(stderr, err_msg, gai_strerror(getaddrinfo_res));
         exit(EXIT_FAILURE);
     }
 }
@@ -163,7 +165,7 @@ bel_close_sock(const int sockfd)
     
     close_result = close(sockfd);
 	if (close_result < 0) {
-        fprintf(stderr, "[FATAL] Could not close socket: exiting");
+        fprintf(stderr, "[FATAL] could not close socket: exiting");
         exit(EXIT_FAILURE);
     }
 }
