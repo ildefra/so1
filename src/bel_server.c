@@ -184,20 +184,35 @@ spawn_client_handler(const int sockfd_acc)
     }
 }
 
-/* TODO: implement actual commands */
 void
 handle_client(const int sockfd_acc)
 {
-    char buff[MSG_MAXLEN + 1];  /* +1 for the null terminator */
-    int len;
+    char buf[MSG_MAXLEN + 1];  /* +1 for the null terminator */
+    
+    void readall_or_die(const int, char*, const size_t);
     
     for(;;) {
-        len = recv(sockfd_acc, buff, MSG_MAXLEN, 0);
-        if (len == -1) {
-            perror("[ERROR] recv()");
-            exit(EXIT_FAILURE);
-        }
-        buff[len] = '\0';   /* null terminator must be added after reading */
-        printf("client sent the following command: '%s' (%d bytes)\n", buff, len);
+        readall_or_die(sockfd_acc, buf, MSG_MAXLEN + 1);
+        
+        /* TODO: implement actual commands */
+        
     }
+}
+
+/*
+ * reads <len> bytes of data to <buf> from the socket <sockfd>. Exits the
+ * process on failure or disconnection
+ */
+void
+readall_or_die(const int sockfd, char* buf, const size_t len)
+{
+    ssize_t bytes_read;
+
+    bytes_read = recv(sockfd, buf, len, 0);
+    if (bytes_read == -1) {
+        perror("[ERROR] recv()");
+        exit(EXIT_FAILURE);
+    }
+    buf[bytes_read] = '\0';   /* null terminator must be added after reading */
+    printf("read the following message: '%s' (%zd bytes)\n", buf, bytes_read);
 }
