@@ -11,6 +11,80 @@
 
 
 /*
+ * Closes the given file (a socket is a file). Does nothing on invalid
+ * descriptors. Exits on error
+ */
+void
+bel_close_or_die(const int fd)
+{
+    int close_result;
+    
+    if (fd < 0) return;
+    printf("[DEBUG] closing file with fd = '%d'\n", fd);
+    close_result = close(fd);
+	if (close_result == -1) {
+        fprintf(stderr, "[FATAL] could not close file: exiting");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+/*
+ * Creates a new socket and returns its file descriptor, or -1 in case of error
+ */
+int
+bel_new_sock(const struct addrinfo ainfo)
+{
+    int sockfd;
+    
+    sockfd = socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
+    if (sockfd == -1) perror("[WARN] socket()");
+    printf("[DEBUG] created socket with fd = '%d'\n", sockfd);
+    
+    return sockfd;
+}
+
+
+/*
+ * Fills servinfo with the list of internet addresses associated with the given
+ * ip and port. Exits program on error!
+ */
+void
+bel_getaddrinfo_or_die(
+        const char* const ip, const u_short port, struct addrinfo **servinfo)
+{
+    char port_str[PORT_MAXCHARS];
+    struct addrinfo hints;
+    int getaddrinfo_res;
+    const char* const err_msg = "[FATAL] getaddrinfo(): %s\n";
+    
+    struct addrinfo make_hints(void);
+    
+    printf("[TRACE] inside bel_getaddrinfo_or_die\n");
+    sprintf(port_str, "%d", port);
+    hints = make_hints();
+    if (ip == NULL) hints.ai_flags = AI_PASSIVE;
+    getaddrinfo_res = getaddrinfo(ip, port_str, &hints, servinfo);
+    if (getaddrinfo_res != 0) {
+        fprintf(stderr, err_msg, gai_strerror(getaddrinfo_res));
+        exit(EXIT_FAILURE);
+    }
+}
+
+struct addrinfo
+make_hints(void)
+{
+    struct addrinfo hints;
+    
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family     = AF_UNSPEC;
+    hints.ai_socktype   = SOCK_STREAM;
+    
+    return hints;
+}
+
+
+/*
  * prints a string representation of the given socket address, prepending the
  * given prefix
  */
@@ -29,6 +103,30 @@ bel_print_address(const char* const prefix, const struct sockaddr *sa)
     full_template = concat(prefix, addr_template);
     printf(full_template, afamily_tostring(sa->sa_family), ipstr);
     free(full_template);
+}
+
+/*
+ * Gets the internet address from the given sockaddr, switching between IPv4 and
+ * IPv6 depending on the address family (IPv4 or IPv6). Returns NULL on error
+ */
+void*
+get_inaddr(const struct sockaddr *sa)
+{
+    void *in_addr;
+    const char* const err_msg = "[ERROR] unrecognized address family %d";
+    
+    switch (sa->sa_family) {
+        case AF_INET:
+            in_addr = &(((struct sockaddr_in*) sa)->sin_addr);
+            break;
+        case AF_INET6:
+            in_addr = &(((struct sockaddr_in6*) sa)->sin6_addr);
+            break;
+        default:
+            fprintf(stderr, err_msg, sa->sa_family);
+            in_addr = NULL;
+    }
+    return in_addr;
 }
 
 /*
@@ -78,101 +176,4 @@ afamily_tostring(const int afamily)
             break;
     }
     return ipver;
-}
-
-/*
- * Gets the internet address from the given sockaddr, switching between IPv4 and
- * IPv6 depending on the address family (IPv4 or IPv6). Returns NULL on error
- */
-void*
-get_inaddr(const struct sockaddr *sa)
-{
-    void *in_addr;
-    const char* const err_msg = "[ERROR] unrecognized address family %d";
-    
-    switch (sa->sa_family) {
-        case AF_INET:
-            in_addr = &(((struct sockaddr_in*) sa)->sin_addr);
-            break;
-        case AF_INET6:
-            in_addr = &(((struct sockaddr_in6*) sa)->sin6_addr);
-            break;
-        default:
-            fprintf(stderr, err_msg, sa->sa_family);
-            in_addr = NULL;
-    }
-    return in_addr;
-}
-
-
-/*
- * Fills servinfo with the list of internet addresses associated with the given
- * ip and port. Exits program on error!
- */
-void
-bel_getaddrinfo_or_die(
-        const char* const ip, const u_short port, struct addrinfo **servinfo)
-{
-    char port_str[PORT_MAXCHARS];
-    struct addrinfo hints;
-    int getaddrinfo_res;
-    const char* const err_msg = "[FATAL] getaddrinfo(): %s\n";
-    
-    struct addrinfo make_hints(void);
-    
-    printf("[TRACE] inside bel_getaddrinfo_or_die\n");
-    sprintf(port_str, "%d", port);
-    hints = make_hints();
-    if (ip == NULL) hints.ai_flags = AI_PASSIVE;
-    getaddrinfo_res = getaddrinfo(ip, port_str, &hints, servinfo);
-    if (getaddrinfo_res != 0) {
-        fprintf(stderr, err_msg, gai_strerror(getaddrinfo_res));
-        exit(EXIT_FAILURE);
-    }
-}
-
-struct addrinfo
-make_hints(void)
-{
-    struct addrinfo hints;
-    
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family     = AF_UNSPEC;
-    hints.ai_socktype   = SOCK_STREAM;
-    
-    return hints;
-}
-
-
-/*
- * Creates a new socket and returns its file descriptor, or -1 in case of error
- */
-int
-bel_new_sock(const struct addrinfo ainfo)
-{
-    int sockfd;
-    
-    sockfd = socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
-    if (sockfd == -1) perror("[WARN] socket()");
-    printf("[DEBUG] created socket with fd = '%d'\n", sockfd);
-    
-    return sockfd;
-}
-
-/*
- * Closes the given file (a socket is a file). Does nothing on invalid
- * descriptors. Exits on error
- */
-void
-bel_close_or_die(const int fd)
-{
-    int close_result;
-    
-    if (fd < 0) return;
-    printf("[DEBUG] closing file with fd = '%d'\n", fd);
-    close_result = close(fd);
-	if (close_result == -1) {
-        fprintf(stderr, "[FATAL] could not close file: exiting");
-        exit(EXIT_FAILURE);
-    }
 }
