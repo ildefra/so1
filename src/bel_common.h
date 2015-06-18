@@ -14,4 +14,7 @@ extern void bel_getaddrinfo_or_die(
 		const char* const, const u_short, struct addrinfo**);
 extern void bel_print_address(const char* const, const struct sockaddr*);
 
+extern void bel_recvall_or_die(const int, char*, const size_t);
+extern void bel_sendall_or_die(const int, const char* const, const size_t);
+
 #endif	/* BELCOMMON_H_INCLUDED */

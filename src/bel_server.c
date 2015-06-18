@@ -175,10 +175,9 @@ spawn_client_handler(const int sockfd_acc)
             bel_close_or_die(sockfd_acc);
             exit(EXIT_FAILURE);
         case 0:     /* child process  */
-            bel_close_or_die(sockfd);
             handle_client(sockfd_acc);
             bel_close_or_die(sockfd_acc);
-            _exit(EXIT_SUCCESS);
+            exit(EXIT_SUCCESS);
         default:    /* parent process  */
             bel_close_or_die(sockfd_acc);
     }
@@ -189,30 +188,11 @@ handle_client(const int sockfd_acc)
 {
     char buf[MSG_MAXLEN + 1];  /* +1 for the null terminator */
     
-    void readall_or_die(const int, char*, const size_t);
-    
     for(;;) {
-        readall_or_die(sockfd_acc, buf, MSG_MAXLEN + 1);
+        bel_recvall_or_die(sockfd_acc, buf, MSG_MAXLEN + 1);
         
         /* TODO: implement actual commands */
         
+        bel_sendall_or_die(sockfd_acc, "OK", 3);
     }
-}
-
-/*
- * reads <len> bytes of data to <buf> from the socket <sockfd>. Exits the
- * process on failure or disconnection
- */
-void
-readall_or_die(const int sockfd, char* buf, const size_t len)
-{
-    ssize_t bytes_read;
-
-    bytes_read = recv(sockfd, buf, len, 0);
-    if (bytes_read == -1) {
-        perror("[ERROR] recv()");
-        exit(EXIT_FAILURE);
-    }
-    buf[bytes_read] = '\0';   /* null terminator must be added after reading */
-    printf("read the following message: '%s' (%zd bytes)\n", buf, bytes_read);
 }

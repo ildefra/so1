@@ -23,7 +23,7 @@ bel_close_or_die(const int fd)
     printf("[DEBUG] closing file with fd = '%d'\n", fd);
     close_result = close(fd);
 	if (close_result == -1) {
-        fprintf(stderr, "[FATAL] could not close file: exiting");
+        perror("[ERROR] close()");
         exit(EXIT_FAILURE);
     }
 }
@@ -113,7 +113,7 @@ void*
 get_inaddr(const struct sockaddr *sa)
 {
     void *in_addr;
-    const char* const err_msg = "[ERROR] unrecognized address family %d";
+    const char* const err_msg = "[ERROR] unrecognized address family '%d'\n";
     
     switch (sa->sa_family) {
         case AF_INET:
@@ -176,4 +176,88 @@ afamily_tostring(const int afamily)
             break;
     }
     return ipver;
+}
+
+
+/*
+ * reads <len> bytes of data to <buf> from the socket <sockfd>. Exits the
+ * process on failure or disconnection
+ */
+void
+bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
+{
+    size_t bytes_left;
+    ssize_t bytes_read;
+    const char* const trace_msg = "[TRACE] %zd bytes read, %zu remaining\n";
+    
+    ssize_t do_recv_or_die(const int, char*, const size_t);
+    
+    printf("[DEBUG] reading %zu bytes of data from socket '%d'\n", len, sockfd);
+    bytes_left = len;
+    while (bytes_left > 0) {
+        bytes_read = do_recv_or_die(sockfd, buf + len - bytes_left, bytes_left);
+        bytes_left -= bytes_read;
+        printf(trace_msg, bytes_read, bytes_left);
+    }
+    buf[bytes_read] = '\0';   /* null terminator must be added after reading */
+    printf("[DEBUG] message received: '%s'\n", buf);
+}
+
+/*
+ * performs the recv() syscall, and exits the program if it fails (peer
+ * disconnection is considered a failure)
+ */
+ssize_t
+do_recv_or_die(const int sockfd, char *buf, const size_t len) {
+    ssize_t bytes_read;
+    
+    bytes_read = recv(sockfd, buf, len, 0);
+    if (bytes_read == -1 || bytes_read == 0) {
+        perror("[ERROR] recv()");
+        bel_close_or_die(sockfd);
+        exit(EXIT_FAILURE);
+    }
+    return bytes_read;
+}
+
+
+/*
+ * sends <len> bytes of data from <buf> to the socket <sockfd>. Exits the
+ * process on failure or disconnection
+ */
+void
+bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
+{
+    size_t bytes_left;
+    ssize_t bytes_sent;
+    const char* const trace_msg = "[TRACE] %zd bytes sent, %zu remaining\n";
+
+    ssize_t do_send_or_die(const int, const char* const, const size_t);
+    
+    printf("[DEBUG] sending %zu bytes of data to socket '%d'\n", len, sockfd);
+    bytes_left = len;
+    while (bytes_left > 0) {
+        bytes_sent = do_send_or_die(sockfd, buf + len - bytes_left, bytes_left);
+        bytes_left -= bytes_sent;
+        printf(trace_msg, bytes_sent, bytes_left);
+    }
+}
+
+/*
+ * performs the send() syscall, and exits the program if it fails (peer
+ * disconnection is considered a failure)
+ */
+ssize_t
+do_send_or_die(const int sockfd, const char* const buf, const size_t len) {
+    ssize_t bytes_sent;
+    
+    void bel_close_sock(int);
+    
+    bytes_sent = send(sockfd, buf, len, 0);
+    if (bytes_sent == -1 || bytes_sent == 0) {
+        perror("[ERROR] send()");
+        bel_close_or_die(sockfd);
+        exit(EXIT_FAILURE);
+    }
+    return bytes_sent;
 }

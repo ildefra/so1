@@ -84,50 +84,21 @@ do_connect(struct addrinfo *ainfo)
 }
 
 
-/* TODO: split */
-/* TODO: implement actual commands */
 /* Actual business logic of the client  */
 void
 run_client()
 {
-    char buff[MSG_MAXLEN + 1];
-    ssize_t len;
-    
-    void sendall_or_die(const int, const char* const, const size_t);
+    char buf[MSG_MAXLEN + 1];
     
     /* authenticate(); */
     for (;;) {
         printf("\nPlease enter a command: ");
-        scanf("%s", buff);
-        sendall_or_die(sockfd, buff, MSG_MAXLEN + 1);
+        scanf("%s", buf);
         
-        len = recv(sockfd, buff, MSG_MAXLEN, 0);
-        if (len == -1) {
-            perror("[FATAL] recv()");
-            exit(EXIT_FAILURE);
-        }
-        buff[len] = '\0';   /* null terminator must be added after reading  */
-        printf("Server answered: '%s' (%zd bytes)\n", buff, len);
-    }
-}
-
-/*
- * sends <len> bytes of data from <buf> to the socket <sockfd>. Exits the
- * process on failure or disconnection
- */
-void
-sendall_or_die(const int sockfd, const char* const buf, const size_t len)
-{
-    size_t bytes_left;
-    ssize_t bytes_sent;
-
-    printf("[DEBUG] sending data to socket '%d'\n", sockfd);
-    for(bytes_left = len; bytes_left > 0; bytes_left -= bytes_sent) {
-        bytes_sent = send(sockfd, buf + len - bytes_left, bytes_left, 0);
-        if (bytes_sent == -1 || bytes_sent == 0) {
-            perror("[ERROR] send()");
-            exit(EXIT_FAILURE);
-        }
+        /* TODO: implement actual commands */
+        
+        bel_sendall_or_die(sockfd, buf, MSG_MAXLEN + 1);
+        bel_recvall_or_die(sockfd, buf, MSG_MAXLEN + 1);
     }
 }
 
