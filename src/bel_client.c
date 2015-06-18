@@ -4,67 +4,80 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Client entry point  */
-int
-main(int __unused argc, char __unused **argv)
+#define ARGC_OK 2
+
+/* (file descriptor of) the socket used to communicate with server  */
+static int sockfd;
+
+/* closes the socket. Called on program exit  */
+void
+cleanup(void)
 {
-	int sockfd;
-    int connect_to(const char* const, u_short);
-    void run_client(int);
+    printf("[DEBUG] resource cleanup\n");
+    bel_close_or_die(sockfd);
+}
+
+/* client entry point  */
+int
+main(int argc, char **argv)
+{
+    void connect_to(const char* const, const u_short);
+    void run_client();
     
-    const char* const server_ip = "localhost";
-    
-    sockfd = connect_to(server_ip, COMM_PORT);
-    printf("[INFO] connected\n");
-    run_client(sockfd);
-	bel_close_sock(sockfd);
+    if (argc != ARGC_OK) {
+        printf("usage: client <remote address>\n");
+        exit(EXIT_FAILURE);
+    }
+    connect_to(argv[1], COMM_PORT);
+    printf("connected to server\n");
+    run_client();
     return EXIT_SUCCESS;
 }
 
-/* 
+/*
  * Gets all the addresses associated to the given ip and port and connects to
  * the first available one
  */
-int
+void
 connect_to(const char* const ip, const u_short port)
 {
+    int do_connect_res;
     struct addrinfo *servinfo, *currinfo;
-    int sockfd;
     int do_connect(struct addrinfo*);
     
-    bel_get_serverinfo(ip, port, &servinfo);
+    bel_getaddrinfo_or_die(ip, port, &servinfo);
     for(currinfo = servinfo; currinfo != NULL; currinfo = currinfo->ai_next) {
-        sockfd = do_connect(currinfo);
-        if (sockfd != -1) break;
+        do_connect_res = do_connect(currinfo);
+        if (do_connect_res != -1) break;
     }
+    atexit(cleanup);
     if (currinfo == NULL) {
         fprintf(stderr, "[FATAL] Failed to connect: exiting\n");
         exit(EXIT_FAILURE);
     }
     freeaddrinfo(servinfo);
-    return sockfd;
 }
 
 /*
- * Performs the actual connection logic: creates a socket and uses it to connect
+ * performs the actual connection logic: creates a socket and uses it to connect
  * to the specified address.
- * returns the file descriptor of the newly-created socket, or -1 if an error
- * occurred.
+ * Saves the file descriptor of the newly-created socket into sockfd. Returns
+ * the file descriptor, or -1 on error.
  */
 int
 do_connect(struct addrinfo *ainfo)
 {
-	int sockfd, connect_res;
+	int connect_res;
 	const char* const conn_msg  = "[INFO] connecting to ";
     
-    sockfd = bel_open_sock(*ainfo);
+    sockfd = bel_new_sock(*ainfo);
     if (sockfd == -1) return -1;
     
     bel_print_address(conn_msg, ainfo->ai_addr);
     connect_res = connect(sockfd, ainfo->ai_addr, ainfo->ai_addrlen);
     if (connect_res == -1) {
-        bel_close_sock(sockfd);
         perror("[WARN] connect()");
+        bel_close_or_die(sockfd);
         return -1;
     }
     return sockfd;
@@ -75,23 +88,43 @@ do_connect(struct addrinfo *ainfo)
 /* TODO: implement actual commands */
 /* Actual business logic of the client  */
 void
-run_client(const int sockfd)
+run_client()
 {
-    char buff[MAX_MSGLEN + 1];  /* +1 for the null terminator  */
+    char buff[MSG_MAXLEN + 1];
     int len;
     
-    printf("[TRACE] run_client: sockfd = '%d'\n", sockfd);
+    /* authenticate(); */
     while (1) {
+        
         printf("\nPlease enter a command: ");
         scanf("%s", buff);
-        send(sockfd, buff, MAX_MSGLEN, 0);
         
-        len = recv(sockfd, buff, MAX_MSGLEN, 0);
+        
+        len = send(sockfd, buff, MSG_MAXLEN, 0);
+        if (len == -1) {
+            perror("[FATAL] send()");
+            exit(EXIT_FAILURE);
+        }
+        
+        len = recv(sockfd, buff, MSG_MAXLEN, 0);
         if (len == -1) {
             perror("[FATAL] recv()");
             exit(EXIT_FAILURE);
         }
         buff[len] = '\0';   /* null terminator must be added after reading  */
-        printf("Server answered: %s (%d bytes)\n", buff, len);
+        printf("Server answered: '%s' (%d bytes)\n", buff, len);
     }
 }
+
+
+/* removes the last character of the given string if it is a newline */
+/*
+void
+chop_newline(char *str)
+{
+    int len;
+    
+    len = strlen(str);
+    if (len > 0 && str[len-1] == '\n') str[len-1] = '\0';
+}
+*/

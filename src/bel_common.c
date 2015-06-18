@@ -110,7 +110,7 @@ get_inaddr(const struct sockaddr *sa)
  * ip and port. Exits program on error!
  */
 void
-bel_get_serverinfo(
+bel_getaddrinfo_or_die(
         const char* const ip, const u_short port, struct addrinfo **servinfo)
 {
     char port_str[PORT_MAXCHARS];
@@ -120,7 +120,7 @@ bel_get_serverinfo(
     
     struct addrinfo make_hints(void);
     
-    printf("[TRACE] inside bel_get_serverinfo\n");
+    printf("[TRACE] inside bel_getaddrinfo_or_die\n");
     sprintf(port_str, "%d", port);
     hints = make_hints();
     if (ip == NULL) hints.ai_flags = AI_PASSIVE;
@@ -148,24 +148,31 @@ make_hints(void)
  * Creates a new socket and returns its file descriptor, or -1 in case of error
  */
 int
-bel_open_sock(const struct addrinfo ainfo)
+bel_new_sock(const struct addrinfo ainfo)
 {
     int sockfd;
     
     sockfd = socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
     if (sockfd == -1) perror("[WARN] socket()");
+    printf("[DEBUG] created socket with fd = '%d'\n", sockfd);
+    
     return sockfd;
 }
 
-/* Closes the given socket. Exits on error  */
+/*
+ * Closes the given file (a socket is a file). Does nothing on invalid
+ * descriptors. Exits on error
+ */
 void
-bel_close_sock(const int sockfd)
+bel_close_or_die(const int fd)
 {
     int close_result;
     
-    close_result = close(sockfd);
-	if (close_result < 0) {
-        fprintf(stderr, "[FATAL] could not close socket: exiting");
+    if (fd < 0) return;
+    printf("[DEBUG] closing file with fd = '%d'\n", fd);
+    close_result = close(fd);
+	if (close_result == -1) {
+        fprintf(stderr, "[FATAL] could not close file: exiting");
         exit(EXIT_FAILURE);
     }
 }
