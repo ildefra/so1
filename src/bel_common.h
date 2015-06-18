@@ -3,8 +3,8 @@
 
 #include <netdb.h>
 
-#define COMM_PORT 3490
-#define MSG_MAXLEN 1024
+#define COMM_PORT 7477
+#define MSG_MAXLEN 1023
 #define UNAME_MAXLEN 32
 #define PWORD_MAXLEN 32
 
