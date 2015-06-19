@@ -1,7 +1,7 @@
 SRCDIR = src
 OBJDIR = obj
 BINDIR = bin
-CFLAGS = -Wall -Wextra
+CFLAGS = -std=c89 -pedantic -Wall -Wextra -Wshadow
 
 .PHONY: all clean
 
