@@ -12,15 +12,29 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-/* (file descriptor of) the socket through which client requests will arrive  */
+/*
+ * (file descriptor of) the main server socket, which handles new client
+ * connections
+ */
 static int sockfd;
 
-/* closes the main socket. Called on program exit  */
+/*
+ * (file descriptor of) the socket used to communicate with the client. Each
+ * process has its own
+ */
+static int sockfd_acc;
+
+
+/*
+ * explicitly closes the resources acquired by the current process. Called on
+ * process exit
+ */
 void
 cleanup(void)
 {
     printf("[DEBUG] resource cleanup\n");
-    bel_close_or_die(sockfd);
+    if (sockfd != 0) bel_close_or_die(sockfd);
+    if (sockfd_acc != 0) bel_close_or_die(sockfd_acc);
 }
 
 /* server entry point */
@@ -32,6 +46,7 @@ main(int __unused argc, char __unused **argv)
     void server_loop(void);
     
     printf("[INFO] program started with pid = '%ld'\n", (long) getpid());
+    atexit(cleanup);
     bind_to_port(COMM_PORT);
     
     /* still not listening though, but we cannot print this after the fact */
@@ -60,7 +75,6 @@ bind_to_port(const u_short port)
         do_bind_res = do_bind(currinfo);
         if (do_bind_res != -1) break;
     }
-    atexit(cleanup);
     if (currinfo == NULL) {
         fprintf(stderr, "[FATAL] failed to bind: exiting\n");
         exit(EXIT_FAILURE);
@@ -71,8 +85,8 @@ bind_to_port(const u_short port)
 /*
  * performs the actual binding logic: creates a socket and uses it to bind to
  * the specified address.
- * Saves the file descriptor of the newly-created socket into sockfd. Returns
- * the file descriptor, or -1 on error.
+ * Saves the file descriptor of the newly-created socket into sockfd.
+ * Returns the file descriptor, or -1 on error.
  */
 int
 do_bind(struct addrinfo *ainfo)
@@ -108,7 +122,6 @@ set_reuseaddr_or_die(void)
             setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
     if (setsockopt_res == -1) {
         perror("[FATAL] setsockopt()");
-        bel_close_or_die(sockfd);   /* atexit not called yet  */
         exit(EXIT_FAILURE);
     }
 }
@@ -129,30 +142,42 @@ do_listen_or_die(void)
 }
 
 
-/* the main server loop */
+/* the main server loop
+ * spawns a child process which handles the client connection on the given
+ * socket (file descriptor)
+
+*/
 void
 server_loop(void)
 {
-    int sockfd_acc;
-    
     int accept_incoming(void);
-    void spawn_client_handler(int);
+    void handle_client(void);
 
     for(;;) {
-        sockfd_acc = accept_incoming();
-        if (sockfd_acc == -1) continue;
-        spawn_client_handler(sockfd_acc);
+        if (accept_incoming() == -1) continue;
+        switch (fork()) {
+            case -1:    /* error, did not fork  */
+                perror("[FATAL] fork()");
+                exit(EXIT_FAILURE);
+            case 0:     /* child process  */
+                handle_client();
+                exit(EXIT_SUCCESS);
+            default:    /* parent process  */
+                bel_close_or_die(sockfd_acc);
+        }
     }
 }
 
 /*
- * blocks until an incoming request arrives, and then returns the file
- * descriptor of the socket created to serve the request, or -1 on error
+ * blocks until an incoming client request arrives, and then creates a socket to
+ * serve this specific client.
+ * Saves the file descriptor of the newly-created socket into sockfd_acc.
+ * Returns the file descriptor, or -1 on error.
  */
 int
 accept_incoming(void)
 {
-    int addrlen, sockfd_acc;
+    int addrlen;
     struct sockaddr_storage client_addr;
 
     const char* const conn_msg = "[INFO] incoming connection from ";
@@ -168,37 +193,14 @@ accept_incoming(void)
     return sockfd_acc;
 }
 
-/*
- * spawns a child process which handles the client connection on the given
- * socket (file descriptor)
- */
 void
-spawn_client_handler(const int sockfd_acc)
-{
-    void handle_client(const int);
-
-    switch (fork()) {
-        case -1:    /* error, did not fork  */
-            perror("[FATAL] fork()");
-            bel_close_or_die(sockfd_acc);
-            exit(EXIT_FAILURE);
-        case 0:     /* child process  */
-            handle_client(sockfd_acc);
-            bel_close_or_die(sockfd_acc);
-            exit(EXIT_SUCCESS);
-        default:    /* parent process  */
-            bel_close_or_die(sockfd_acc);
-    }
-}
-
-void
-handle_client(const int sockfd_acc)
+handle_client(void)
 {
     char buf[STD_MSGLEN + 1];  /* +1 for the null terminator */
     
-    void authenticate_or_die(const int);
+    void authenticate_or_die(void);
 
-    authenticate_or_die(sockfd_acc);
+    authenticate_or_die();
     for(;;) {
         bel_recvall_or_die(sockfd_acc, buf, STD_MSGLEN + 1);
         
@@ -213,7 +215,7 @@ handle_client(const int sockfd_acc)
  * Exits the process if an error occurs or wrong credentials are provided
  */
 void
-authenticate_or_die(const int sockfd_acc)
+authenticate_or_die(void)
 {
     /* +2 for \n and \0 */
     char uname[UNAME_MSGLEN + 2];

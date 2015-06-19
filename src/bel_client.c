@@ -9,6 +9,7 @@
 #include "bel_common.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #define ARGC_OK 2
@@ -21,7 +22,7 @@ void
 cleanup(void)
 {
     printf("[DEBUG] resource cleanup\n");
-    bel_close_or_die(sockfd);
+    if (sockfd != 0) bel_close_or_die(sockfd);
 }
 
 /* client entry point  */
@@ -37,6 +38,7 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
     printf("[INFO] program started with pid = '%ld'\n", (long) getpid());
+    atexit(cleanup);
     connect_to(argv[1], COMM_PORT);
     printf("connected to server\n");
     authenticate();
@@ -61,7 +63,6 @@ connect_to(const char* const ip, const u_short port)
         do_connect_res = do_connect(currinfo);
         if (do_connect_res != -1) break;
     }
-    atexit(cleanup);
     if (currinfo == NULL) {
         fprintf(stderr, "[FATAL] Failed to connect: exiting\n");
         exit(EXIT_FAILURE);

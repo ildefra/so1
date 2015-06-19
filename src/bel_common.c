@@ -204,23 +204,23 @@ bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
 }
 
 /*
- * performs the recv() syscall, and exits the program on failure or
+ * performs the recv() system call, and exits the program on failure or
  * disconnection
  */
 ssize_t
 do_recv_or_die(const int sockfd, char *buf, const size_t len) {
     ssize_t bytes_read;
     
+    printf("[TRACE] inside do_recv_or_die\n");
     bytes_read = recv(sockfd, buf, len, 0);
+    printf("[TRACE] send() syscall returned '%zd'\n", bytes_read);
     if (bytes_read == -1) {
         perror("[ERROR] recv()");
-        bel_close_or_die(sockfd);
         exit(EXIT_FAILURE);
     }
     if (bytes_read == 0) {
         printf("[DEBUG] socket '%d': connection reset by peer\n", sockfd);
-        bel_close_or_die(sockfd);
-        exit(EXIT_SUCCESS);        
+        exit(EXIT_SUCCESS);
     }
     return bytes_read;
 }
@@ -249,25 +249,26 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
 }
 
 /*
- * performs the send() syscall, and exits the program on failure or
- * disconnection
+ * performs the send() system call, and exits the program on failure or
+ * disconnection.
+ * The MSG_NOSIGNAL flag is used during the call, in order to make send() return
+ * a 'Broken Pipe' error instead of a SIGPIPE, which would crash the application
+ * if unhandled (it exits anyway, but at least an error message is shown)
  */
 ssize_t
 do_send_or_die(const int sockfd, const char* const buf, const size_t len) {
     ssize_t bytes_sent;
     
-    void bel_close_sock(int);
-    
-    bytes_sent = send(sockfd, buf, len, 0);
+    printf("[TRACE] inside do_send_or_die\n");
+    bytes_sent = send(sockfd, buf, len, MSG_NOSIGNAL);
+    printf("[TRACE] send() syscall returned '%zd'\n", bytes_sent);
     if (bytes_sent == -1) {
         perror("[ERROR] send()");
-        bel_close_or_die(sockfd);
         exit(EXIT_FAILURE);
     }
     if (bytes_sent == 0) {
         printf("[DEBUG] socket '%d': connection reset by peer\n", sockfd);
-        bel_close_or_die(sockfd);
-        exit(EXIT_SUCCESS);        
+        exit(EXIT_SUCCESS);
     }
     return bytes_sent;
 }
