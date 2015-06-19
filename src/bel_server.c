@@ -181,6 +181,8 @@ accept_incoming(void)
     struct sockaddr_storage client_addr;
 
     const char* const conn_msg = "[INFO] incoming connection from ";
+    const char* const debug_msg =
+            "[DEBUG] created socket with fd = '%d' to handle the connection";
     
     addrlen = sizeof(client_addr);
     sockfd_acc = accept(sockfd, (struct sockaddr *) &client_addr, &addrlen);
@@ -189,7 +191,7 @@ accept_incoming(void)
         return -1;
     }
     bel_print_address(conn_msg, (struct sockaddr *) &client_addr);
-    
+    printf(debug_msg, sockfd_acc);
     return sockfd_acc;
 }
 
