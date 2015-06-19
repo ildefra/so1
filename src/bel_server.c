@@ -24,6 +24,7 @@ main(int __unused argc, char __unused **argv)
     void do_listen_or_die();
     void server_loop();
     
+    printf("[INFO] program started with pid = '%ld'\n", (long) getpid());
     bind_to_port(COMM_PORT);
     
     /* still not listening though, but we cannot print this after the fact */

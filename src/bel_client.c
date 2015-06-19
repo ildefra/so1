@@ -3,6 +3,7 @@
 #include "bel_common.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define ARGC_OK 2
 
@@ -28,6 +29,7 @@ main(int argc, char **argv)
         printf("usage: client <remote address>\n");
         exit(EXIT_FAILURE);
     }
+    printf("[INFO] program started with pid = '%ld'\n", (long) getpid());
     connect_to(argv[1], COMM_PORT);
     printf("connected to server\n");
     run_client();
