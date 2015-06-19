@@ -1,4 +1,11 @@
-/* bel_server - server part of the OS1 assignment  */
+/* 
+ * bel_server.c - Server part of the OS1 assignment
+ *
+ * General considerations:
+ * - communication protocol is based on fixed-length messages
+ * - every communication failure with a specific client will close that
+ * connection and abort the process assigned to it
+ */
 
 #include "bel_common.h"
 #include <stdio.h>
@@ -21,8 +28,8 @@ int
 main(int __unused argc, char __unused **argv)
 {
     void bind_to_port(u_short);
-    void do_listen_or_die();
-    void server_loop();
+    void do_listen_or_die(void);
+    void server_loop(void);
     
     printf("[INFO] program started with pid = '%ld'\n", (long) getpid());
     bind_to_port(COMM_PORT);
@@ -72,7 +79,7 @@ do_bind(struct addrinfo *ainfo)
 {
 	int bind_res;
     const char* const bind_msg  = "[INFO] binding to ";
-    void set_reuseaddr_or_die();
+    void set_reuseaddr_or_die(void);
     
     sockfd = bel_new_sock(*ainfo);
     if (sockfd == -1) return -1;
@@ -93,7 +100,7 @@ do_bind(struct addrinfo *ainfo)
  * call fails something bad happened, so we exit the program
  */
 void
-set_reuseaddr_or_die()
+set_reuseaddr_or_die(void)
 {
     int yes = 1, setsockopt_res;
     
@@ -109,7 +116,7 @@ set_reuseaddr_or_die()
 
 /* performs the listen() syscall, and exits the program if it fails */
 void
-do_listen_or_die()
+do_listen_or_die(void)
 {
     int listen_result;
     const int listen_backlog = 10;
@@ -124,11 +131,11 @@ do_listen_or_die()
 
 /* the main server loop */
 void
-server_loop()
+server_loop(void)
 {
     int sockfd_acc;
     
-    int accept_incoming();
+    int accept_incoming(void);
     void spawn_client_handler(int);
 
     for(;;) {
@@ -143,7 +150,7 @@ server_loop()
  * descriptor of the socket created to serve the request, or -1 on error
  */
 int
-accept_incoming()
+accept_incoming(void)
 {
     int addrlen, sockfd_acc;
     struct sockaddr_storage client_addr;
@@ -187,13 +194,35 @@ spawn_client_handler(const int sockfd_acc)
 void
 handle_client(const int sockfd_acc)
 {
-    char buf[MSG_MAXLEN + 1];  /* +1 for the null terminator */
+    char buf[STD_MSGLEN + 1];  /* +1 for the null terminator */
     
+    void authenticate_or_die(const int);
+
+    authenticate_or_die(sockfd_acc);
     for(;;) {
-        bel_recvall_or_die(sockfd_acc, buf, MSG_MAXLEN + 1);
+        bel_recvall_or_die(sockfd_acc, buf, STD_MSGLEN + 1);
         
         /* TODO: implement actual commands */
         
-        bel_sendall_or_die(sockfd_acc, "OK", 3);
+        bel_sendall_or_die(sockfd_acc, "OK", ANSWER_MSGLEN);
     }
+}
+
+/*
+ * asks for username and password and authenticates against the server.
+ * Exits the process if an error occurs or wrong credentials are provided
+ */
+void
+authenticate_or_die(const int sockfd_acc)
+{
+    /* +2 for \n and \0 */
+    char uname[UNAME_MSGLEN + 2];
+    char pword[PWORD_MSGLEN + 2];
+    
+    bel_recvall_or_die(sockfd_acc, uname, UNAME_MSGLEN + 2);
+    bel_recvall_or_die(sockfd_acc, pword, PWORD_MSGLEN + 2);
+
+    /* TODO: actual authentication here */
+    
+    bel_sendall_or_die(sockfd_acc, "OK", ANSWER_MSGLEN);
 }

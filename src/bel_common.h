@@ -3,10 +3,18 @@
 
 #include <netdb.h>
 
+
 #define COMM_PORT 7477
-#define MSG_MAXLEN 1023
-#define UNAME_MAXLEN 32
-#define PWORD_MAXLEN 32
+
+/*
+ * message lengths for client-server communication. Last byte will always be the
+ * string terminator '\0', so the actual payload is always one byte shorter
+ */
+#define UNAME_MSGLEN 32
+#define PWORD_MSGLEN 32
+#define STD_MSGLEN 1024
+#define ANSWER_MSGLEN 3
+
 
 extern void bel_close_or_die(const int);
 extern int bel_new_sock(const struct addrinfo);
