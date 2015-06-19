@@ -204,18 +204,23 @@ bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
 }
 
 /*
- * performs the recv() syscall, and exits the program if it fails (peer
- * disconnection is considered a failure)
+ * performs the recv() syscall, and exits the program on failure or
+ * disconnection
  */
 ssize_t
 do_recv_or_die(const int sockfd, char *buf, const size_t len) {
     ssize_t bytes_read;
     
     bytes_read = recv(sockfd, buf, len, 0);
-    if (bytes_read == -1 || bytes_read == 0) {
+    if (bytes_read == -1) {
         perror("[ERROR] recv()");
         bel_close_or_die(sockfd);
         exit(EXIT_FAILURE);
+    }
+    if (bytes_read == 0) {
+        printf("[DEBUG] socket '%d': connection reset by peer\n", sockfd);
+        bel_close_or_die(sockfd);
+        exit(EXIT_SUCCESS);        
     }
     return bytes_read;
 }
@@ -244,8 +249,8 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
 }
 
 /*
- * performs the send() syscall, and exits the program if it fails (peer
- * disconnection is considered a failure)
+ * performs the send() syscall, and exits the program on failure or
+ * disconnection
  */
 ssize_t
 do_send_or_die(const int sockfd, const char* const buf, const size_t len) {
@@ -254,10 +259,15 @@ do_send_or_die(const int sockfd, const char* const buf, const size_t len) {
     void bel_close_sock(int);
     
     bytes_sent = send(sockfd, buf, len, 0);
-    if (bytes_sent == -1 || bytes_sent == 0) {
+    if (bytes_sent == -1) {
         perror("[ERROR] send()");
         bel_close_or_die(sockfd);
         exit(EXIT_FAILURE);
+    }
+    if (bytes_sent == 0) {
+        printf("[DEBUG] socket '%d': connection reset by peer\n", sockfd);
+        bel_close_or_die(sockfd);
+        exit(EXIT_SUCCESS);        
     }
     return bytes_sent;
 }
