@@ -17,7 +17,10 @@
 /* (file descriptor of) the socket used to communicate with server  */
 static int sockfd;
 
-/* closes the socket. Called on program exit  */
+/*
+ * Explicitly closes the resources acquired by the current process. Called on
+ * process exit
+ */
 void
 cleanup(void)
 {
@@ -25,7 +28,7 @@ cleanup(void)
     if (sockfd != 0) bel_close_or_die(sockfd);
 }
 
-/* client entry point  */
+/* Client entry point  */
 int
 main(int argc, char **argv)
 {
@@ -55,7 +58,8 @@ void
 connect_to(const char* const ip, const u_short port)
 {
     int do_connect_res;
-    struct addrinfo *servinfo, *currinfo;
+    struct addrinfo *servinfo = NULL, *currinfo = NULL;
+    
     int do_connect(struct addrinfo*);
     
     bel_getaddrinfo_or_die(ip, port, &servinfo);
@@ -71,7 +75,7 @@ connect_to(const char* const ip, const u_short port)
 }
 
 /*
- * performs the actual connection logic: creates a socket and uses it to connect
+ * Performs the actual connection logic: creates a socket and uses it to connect
  * to the specified address.
  * Saves the file descriptor of the newly-created socket into sockfd. Returns
  * the file descriptor, or -1 on error.
@@ -109,13 +113,13 @@ authenticate(void) {
 }
 
 /*
- * asks the user for his username and password and sends them to the server for
+ * Asks the user for his username and password and sends them to the server for
  * authentication.
  */
 void
 send_credentials(void)
 {
-    /* +2 for \n and \0 */
+    /* +2 for \n and \0  */
     char uname[UNAME_MSGLEN + 2];
     char pword[PWORD_MSGLEN + 2];
     
@@ -129,7 +133,7 @@ send_credentials(void)
 }
 
 /*
- * waits for an answer from the server. Returns 1 for a positive answer ("OK")
+ * Waits for an answer from the server. Returns 1 for a positive answer ("OK")
  * and 0 for a negative one (should be "KO", but does not check for it)
  */
 int
@@ -161,7 +165,7 @@ run_client(void)
 }
 
 
-/* removes the last character of the given string if it is a newline  */
+/* Removes the last character of the given string if it is a newline  */
 /*
 void
 chop_newline(char *str)

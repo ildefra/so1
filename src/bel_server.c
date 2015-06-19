@@ -26,7 +26,7 @@ static int sockfd_acc;
 
 
 /*
- * explicitly closes the resources acquired by the current process. Called on
+ * Explicitly closes the resources acquired by the current process. Called on
  * process exit
  */
 void
@@ -37,9 +37,9 @@ cleanup(void)
     if (sockfd_acc != 0) bel_close_or_die(sockfd_acc);
 }
 
-/* server entry point */
+/* Server entry point  */
 int
-main(int __unused argc, char __unused **argv)
+main(void)
 {
     void bind_to_port(u_short);
     void do_listen_or_die(void);
@@ -59,14 +59,14 @@ main(int __unused argc, char __unused **argv)
 
 
 /* 
- * gets all the addresses associated to the given port and binds to the first
+ * Gets all the addresses associated to the given port and binds to the first
  * available one
  */
 void
 bind_to_port(const u_short port)
 {
     int do_bind_res;
-    struct addrinfo *servinfo, *currinfo;
+    struct addrinfo *servinfo = NULL, *currinfo = NULL;
     
     int do_bind(struct addrinfo*);
 
@@ -83,7 +83,7 @@ bind_to_port(const u_short port)
 }
 
 /*
- * performs the actual binding logic: creates a socket and uses it to bind to
+ * Performs the actual binding logic: creates a socket and uses it to bind to
  * the specified address.
  * Saves the file descriptor of the newly-created socket into sockfd.
  * Returns the file descriptor, or -1 on error.
@@ -127,7 +127,7 @@ set_reuseaddr_or_die(void)
 }
 
 
-/* performs the listen() syscall, and exits the program if it fails */
+/* Performs the listen() syscall, and exits the program if it fails */
 void
 do_listen_or_die(void)
 {
@@ -142,11 +142,7 @@ do_listen_or_die(void)
 }
 
 
-/* the main server loop
- * spawns a child process which handles the client connection on the given
- * socket (file descriptor)
-
-*/
+/* The main server loop, spawning child processes to handle clients  */
 void
 server_loop(void)
 {
@@ -169,7 +165,7 @@ server_loop(void)
 }
 
 /*
- * blocks until an incoming client request arrives, and then creates a socket to
+ * Blocks until an incoming client request arrives, and then creates a socket to
  * serve this specific client.
  * Saves the file descriptor of the newly-created socket into sockfd_acc.
  * Returns the file descriptor, or -1 on error.
@@ -213,7 +209,7 @@ handle_client(void)
 }
 
 /*
- * asks for username and password and authenticates against the server.
+ * Asks for username and password and authenticates against the server.
  * Exits the process if an error occurs or wrong credentials are provided
  */
 void

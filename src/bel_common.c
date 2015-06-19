@@ -85,14 +85,14 @@ make_hints(void)
 
 
 /*
- * prints a string representation of the given socket address, prepending the
+ * Prints a string representation of the given socket address, prepending the
  * given prefix
  */
 void
 bel_print_address(const char* const prefix, const struct sockaddr *sa)
 {
     char ipstr[INET6_ADDRSTRLEN];
-    char* full_template;
+    char* full_template = NULL;
     const char* const addr_template = "%s address %s\n";
     
     void* get_inaddr(const struct sockaddr *sa);
@@ -130,7 +130,7 @@ get_inaddr(const struct sockaddr *sa)
 }
 
 /*
- * concatenates the two given strings on a newly-allocated block of memory. It
+ * Concatenates the two given strings on a newly-allocated block of memory. It
  * is responsibility of the caller to free the memory when it is no longer
  * needed. Returns NULL if malloc() fails
  */
@@ -138,7 +138,7 @@ char*
 concat(const char* const s1, const char* const s2)
 {
     size_t len1, len2;
-    char *result;
+    char *result = NULL;
     
     len1 = strlen(s1);
     len2 = strlen(s2);
@@ -180,7 +180,7 @@ afamily_tostring(const int afamily)
 
 
 /*
- * reads <len> bytes of data to <buf> from the socket <sockfd>. Exits the
+ * Reads <len> bytes of data to <buf> from the socket <sockfd>. Exits the
  * process on failure or disconnection
  */
 void
@@ -204,7 +204,7 @@ bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
 }
 
 /*
- * performs the recv() system call, and exits the program on failure or
+ * Performs the recv() system call, and exits the program on failure or
  * disconnection
  */
 ssize_t
@@ -227,7 +227,7 @@ do_recv_or_die(const int sockfd, char *buf, const size_t len) {
 
 
 /*
- * sends <len> bytes of data from <buf> to the socket <sockfd>. Exits the
+ * Sends <len> bytes of data from <buf> to the socket <sockfd>. Exits the
  * process on failure or disconnection
  */
 void
@@ -249,7 +249,7 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
 }
 
 /*
- * performs the send() system call, and exits the program on failure or
+ * Performs the send() system call, and exits the program on failure or
  * disconnection.
  * The MSG_NOSIGNAL flag is used during the call, in order to make send() return
  * a 'Broken Pipe' error instead of a SIGPIPE, which would crash the application
