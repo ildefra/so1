@@ -186,18 +186,18 @@ afamily_tostring(const int afamily)
 void
 bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
 {
-    size_t bytes_left;
+    size_t  bytes_left;
     ssize_t bytes_read;
-    const char* const trace_msg = "[TRACE] %zd bytes read, %zu remaining\n";
+    const char* const debug_msg =
+            "[DEBUG] reading %lu bytes of data from socket '%d'\n";
     
     ssize_t do_recv_or_die(const int, char*, const size_t);
     
-    printf("[DEBUG] reading %zu bytes of data from socket '%d'\n", len, sockfd);
+    printf(debug_msg, (unsigned long) len, sockfd);
     bytes_left = len;
     while (bytes_left > 0) {
         bytes_read = do_recv_or_die(sockfd, buf + len - bytes_left, bytes_left);
         bytes_left -= bytes_read;
-        printf(trace_msg, bytes_read, bytes_left);
     }
     buf[bytes_read] = '\0';   /* null terminator must be added after reading */
     printf("[DEBUG] message received: '%s'\n", buf);
@@ -213,7 +213,7 @@ do_recv_or_die(const int sockfd, char *buf, const size_t len) {
     
     printf("[TRACE] inside do_recv_or_die\n");
     bytes_read = recv(sockfd, buf, len, 0);
-    printf("[TRACE] send() syscall returned '%zd'\n", bytes_read);
+    printf("[TRACE] send() syscall returned '%ld'\n", (long) bytes_read);
     if (bytes_read == -1) {
         perror("[ERROR] recv()");
         exit(EXIT_FAILURE);
@@ -233,18 +233,18 @@ do_recv_or_die(const int sockfd, char *buf, const size_t len) {
 void
 bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
 {
-    size_t bytes_left;
+    size_t  bytes_left;
     ssize_t bytes_sent;
-    const char* const trace_msg = "[TRACE] %zd bytes sent, %zu remaining\n";
+    const char* const debug_msg =
+            "[DEBUG] sending %lu bytes of data to socket '%d'\n";
 
     ssize_t do_send_or_die(const int, const char* const, const size_t);
     
-    printf("[DEBUG] sending %zu bytes of data to socket '%d'\n", len, sockfd);
+    printf(debug_msg, (unsigned long) len, sockfd);
     bytes_left = len;
     while (bytes_left > 0) {
         bytes_sent = do_send_or_die(sockfd, buf + len - bytes_left, bytes_left);
         bytes_left -= bytes_sent;
-        printf(trace_msg, bytes_sent, bytes_left);
     }
 }
 
@@ -261,7 +261,7 @@ do_send_or_die(const int sockfd, const char* const buf, const size_t len) {
     
     printf("[TRACE] inside do_send_or_die\n");
     bytes_sent = send(sockfd, buf, len, MSG_NOSIGNAL);
-    printf("[TRACE] send() syscall returned '%zd'\n", bytes_sent);
+    printf("[TRACE] send() syscall returned '%ld'\n", (long) bytes_sent);
     if (bytes_sent == -1) {
         perror("[ERROR] send()");
         exit(EXIT_FAILURE);
