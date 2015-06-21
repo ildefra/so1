@@ -9,7 +9,6 @@
 
 #define PORT_MAXCHARS 5
 
-
 /*
  * Closes the given file (a socket is a file). Does nothing on invalid
  * descriptors. Exits on error

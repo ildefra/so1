@@ -14,8 +14,13 @@
 
 #define ARGC_OK 2
 
+void chop_newline(char*);
+int ok_from_server(void);
+
+
 /* (file descriptor of) the socket used to communicate with server  */
 static int sockfd;
+
 
 /*
  * Explicitly closes the resources acquired by the current process. Called on
@@ -27,6 +32,7 @@ cleanup(void)
     printf("[DEBUG] resource cleanup\n");
     if (sockfd != 0) bel_close_or_die(sockfd);
 }
+
 
 /* Client entry point  */
 int
@@ -100,10 +106,10 @@ do_connect(struct addrinfo *ainfo)
 }
 
 
+/* Authenticates against the server and exits the program on bad credentials  */
 void
 authenticate(void) {
     void send_credentials(void);
-    int ok_from_server(void);
     
     send_credentials();
     if (!ok_from_server()) {
@@ -119,18 +125,36 @@ authenticate(void) {
 void
 send_credentials(void)
 {
-    /* +2 for \n and \0  */
-    char uname[UNAME_MSGLEN + 2];
-    char pword[PWORD_MSGLEN + 2];
+    char uname[UNAME_MSGLEN + 1];   /* +1 for \n  */
+    char pword[PWORD_MSGLEN + 1];   /* +1 for \n  */
     
-    printf("insert your username (max %d characters): ", UNAME_MSGLEN);
-    fgets(uname, sizeof(uname), stdin);
-    bel_sendall_or_die(sockfd, uname, UNAME_MSGLEN + 2);
+    printf("insert your username (max %d characters): ", UNAME_MSGLEN - 1);
+    chop_newline(fgets(uname, sizeof(uname), stdin));
+    bel_sendall_or_die(sockfd, uname, UNAME_MSGLEN);
     
-    printf("insert your password (max %d characters): ", PWORD_MSGLEN);
-    fgets(pword, sizeof(pword), stdin);
-    bel_sendall_or_die(sockfd, pword, PWORD_MSGLEN + 2);
+    printf("insert your password (max %d characters): ", PWORD_MSGLEN - 1);
+    chop_newline(fgets(pword, sizeof(pword), stdin));
+    bel_sendall_or_die(sockfd, pword, PWORD_MSGLEN);
 }
+
+
+/* Actual business logic of the client  */
+void
+run_client(void)
+{
+    char buf[STD_MSGLEN + 1];   /* +1 for \n  */
+    
+    for (;;) {
+        printf("\nPlease enter a command: ");
+        chop_newline(fgets(buf, sizeof(buf), stdin));
+        
+        /* TODO: implement actual commands */
+        
+        bel_sendall_or_die(sockfd, buf, STD_MSGLEN);
+        ok_from_server();
+    }
+}
+
 
 /*
  * Waits for an answer from the server. Returns 1 for a positive answer ("OK")
@@ -142,31 +166,11 @@ ok_from_server(void)
     char answer[ANSWER_MSGLEN];
     
     bel_recvall_or_die(sockfd, answer, ANSWER_MSGLEN);
-    return strcmp(answer, "OK") == 0;
-}
-
-
-/* Actual business logic of the client  */
-void
-run_client(void)
-{
-    char buf[STD_MSGLEN + 1];
-    
-    
-    for (;;) {
-        printf("\nPlease enter a command: ");
-        scanf("%s", buf);
-        
-        /* TODO: implement actual commands */
-        
-        bel_sendall_or_die(sockfd, buf, STD_MSGLEN + 1);
-        ok_from_server();
-    }
+    return strcmp(answer, ANSWER_OK) == 0;
 }
 
 
 /* Removes the last character of the given string if it is a newline  */
-/*
 void
 chop_newline(char *str)
 {
@@ -175,4 +179,3 @@ chop_newline(char *str)
     len = strlen(str);
     if (len > 0 && str[len-1] == '\n') str[len-1] = '\0';
 }
-*/

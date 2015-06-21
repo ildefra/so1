@@ -178,7 +178,7 @@ accept_incoming(void)
 
     const char* const conn_msg = "[INFO] incoming connection from ";
     const char* const debug_msg =
-            "[DEBUG] created socket with fd = '%d' to handle the connection";
+            "[DEBUG] created socket with fd = '%d' to handle the connection\n";
     
     addrlen = sizeof(client_addr);
     sockfd_acc = accept(sockfd, (struct sockaddr *) &client_addr, &addrlen);
@@ -194,17 +194,17 @@ accept_incoming(void)
 void
 handle_client(void)
 {
-    char buf[STD_MSGLEN + 1];  /* +1 for the null terminator */
+    char buf[STD_MSGLEN];
     
     void authenticate_or_die(void);
 
     authenticate_or_die();
     for(;;) {
-        bel_recvall_or_die(sockfd_acc, buf, STD_MSGLEN + 1);
+        bel_recvall_or_die(sockfd_acc, buf, STD_MSGLEN);
         
         /* TODO: implement actual commands */
         
-        bel_sendall_or_die(sockfd_acc, "OK", ANSWER_MSGLEN);
+        bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
     }
 }
 
@@ -215,14 +215,13 @@ handle_client(void)
 void
 authenticate_or_die(void)
 {
-    /* +2 for \n and \0 */
-    char uname[UNAME_MSGLEN + 2];
-    char pword[PWORD_MSGLEN + 2];
+    char uname[UNAME_MSGLEN];
+    char pword[PWORD_MSGLEN];
     
-    bel_recvall_or_die(sockfd_acc, uname, UNAME_MSGLEN + 2);
-    bel_recvall_or_die(sockfd_acc, pword, PWORD_MSGLEN + 2);
+    bel_recvall_or_die(sockfd_acc, uname, UNAME_MSGLEN);
+    bel_recvall_or_die(sockfd_acc, pword, PWORD_MSGLEN);
 
     /* TODO: actual authentication here */
     
-    bel_sendall_or_die(sockfd_acc, "OK", ANSWER_MSGLEN);
+    bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }

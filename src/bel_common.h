@@ -15,6 +15,8 @@
 #define STD_MSGLEN 1024
 #define ANSWER_MSGLEN 3
 
+#define ANSWER_OK "OK"
+#define ANSWER_KO "KO"
 
 extern void bel_close_or_die(const int);
 extern int bel_new_sock(const struct addrinfo);
