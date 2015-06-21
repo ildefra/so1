@@ -138,21 +138,72 @@ send_credentials(void)
 }
 
 
+/* TODO: use a Command struct to kill the switch  */
 /* Actual business logic of the client  */
 void
 run_client(void)
 {
-    char buf[STD_MSGLEN + 1];   /* +1 for \n  */
+    char command;
+    
+    void read_all_messages(void);
+    void send_new_message(void);
+    void remove_message(void);
+    void user_quit(void);
+    void invalid_command(void);
     
     for (;;) {
-        printf("\nPlease enter a command: ");
-        chop_newline(fgets(buf, sizeof(buf), stdin));
-        
-        /* TODO: implement actual commands */
-        
-        bel_sendall_or_die(sockfd, buf, STD_MSGLEN);
-        ok_from_server();
+        fflush(stdin);  /* clearing the keyboard buffer to avoid surprises  */
+        printf( "\n[1] read all messages"
+                "\n[2] send new message"
+                "\n[3] remove message"
+                "\n[4] quit"
+                "\nEnter a command: ");
+        command = getchar();
+        putchar('\n');
+        switch(command) {
+            case '1':
+                read_all_messages();
+                break;
+            case '2':
+                send_new_message();
+                break;
+            case '3':
+                remove_message();
+                break;
+            case '4':
+                user_quit();
+                break;
+            default:
+                invalid_command();
+                break;
+        }
     }
+}
+
+void
+read_all_messages(void) {
+    /* TODO: implement  */
+}
+
+void
+send_new_message(void) {
+    /* TODO: implement  */
+}
+
+void
+remove_message(void) {
+    /* TODO: implement  */
+}
+
+void
+user_quit(void) {
+    printf("Goodbye!\n");
+    exit(EXIT_SUCCESS);
+}
+
+void
+invalid_command(void) {
+    /* TODO: implement  */
 }
 
 
