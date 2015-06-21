@@ -10,7 +10,16 @@
 #include "bel_common.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+
+#define NO_OF_USERS 3
+
+typedef struct {
+    char uname[UNAME_MSGLEN];
+    char pword[PWORD_MSGLEN];
+} Credentials;
+
 
 /*
  * (file descriptor of) the main server socket, which handles new client
@@ -208,20 +217,38 @@ handle_client(void)
     }
 }
 
-/*
- * Asks for username and password and authenticates against the server.
- * Exits the process if an error occurs or wrong credentials are provided
- */
+
 void
 authenticate_or_die(void)
 {
-    char uname[UNAME_MSGLEN];
-    char pword[PWORD_MSGLEN];
+    Credentials login;
     
-    bel_recvall_or_die(sockfd_acc, uname, UNAME_MSGLEN);
-    bel_recvall_or_die(sockfd_acc, pword, PWORD_MSGLEN);
-
-    /* TODO: actual authentication here */
+    int is_valid_login(const Credentials);
     
+    bel_recvall_or_die(sockfd_acc, login.uname, UNAME_MSGLEN);
+    bel_recvall_or_die(sockfd_acc, login.pword, PWORD_MSGLEN);
+    if(!is_valid_login(login)) {
+        bel_sendall_or_die(sockfd_acc, ANSWER_KO, ANSWER_MSGLEN);
+        exit(EXIT_SUCCESS);
+    }
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+}
+
+/*
+ * Returns 1 if given credentials match one of the registered (hardcoded) users,
+ * 0 otherwise
+ */
+int
+is_valid_login(const Credentials login)
+{
+    int i, uname_matches, pword_matches;
+    const Credentials users[NO_OF_USERS] =
+            {{"pippo", "pluto"}, {"admin", "admin"}, {"test", "test1234"}};
+
+    for(i = 0; i < NO_OF_USERS; i++) {
+        uname_matches = strcmp(login.uname, users[i].uname) == 0;
+        pword_matches = strcmp(login.pword, users[i].pword) == 0;
+        if(uname_matches && pword_matches) return 1;    /* true  */
+    }
+    return 0;   /* false  */
 }
