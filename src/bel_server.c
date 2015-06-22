@@ -161,14 +161,15 @@ server_loop(void)
     for(;;) {
         if (accept_incoming() == -1) continue;
         switch (fork()) {
-            case -1:    /* error, did not fork  */
-                perror("[FATAL] fork()");
-                exit(EXIT_FAILURE);
-            case 0:     /* child process  */
-                handle_client();
-                exit(EXIT_SUCCESS);
-            default:    /* parent process  */
-                bel_close_or_die(sockfd_acc);
+        case -1:    /* error, did not fork  */
+            perror("[FATAL] fork()");
+            exit(EXIT_FAILURE);
+        case 0:     /* child process  */
+            handle_client();
+            exit(EXIT_SUCCESS);
+        default:    /* parent process  */
+            bel_close_or_die(sockfd_acc);
+            break;
         }
     }
 }

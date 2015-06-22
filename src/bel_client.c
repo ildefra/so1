@@ -161,21 +161,21 @@ run_client(void)
         command = getchar();
         putchar('\n');
         switch(command) {
-            case '1':
-                read_all_messages();
-                break;
-            case '2':
-                send_new_message();
-                break;
-            case '3':
-                remove_message();
-                break;
-            case '4':
-                user_quit();
-                break;
-            default:
-                invalid_command();
-                break;
+        case '1':
+            read_all_messages();
+            break;
+        case '2':
+            send_new_message();
+            break;
+        case '3':
+            remove_message();
+            break;
+        case '4':
+            user_quit();
+            break;
+        default:
+            invalid_command();
+            break;
         }
     }
 }

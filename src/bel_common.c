@@ -115,15 +115,16 @@ get_inaddr(const struct sockaddr *sa)
     const char* const err_msg = "[ERROR] unrecognized address family '%d'\n";
     
     switch (sa->sa_family) {
-        case AF_INET:
-            in_addr = &(((struct sockaddr_in*) sa)->sin_addr);
-            break;
-        case AF_INET6:
-            in_addr = &(((struct sockaddr_in6*) sa)->sin6_addr);
-            break;
-        default:
-            fprintf(stderr, err_msg, sa->sa_family);
-            in_addr = NULL;
+    case AF_INET:
+        in_addr = &(((struct sockaddr_in*) sa)->sin_addr);
+        break;
+    case AF_INET6:
+        in_addr = &(((struct sockaddr_in6*) sa)->sin6_addr);
+        break;
+    default:
+        fprintf(stderr, err_msg, sa->sa_family);
+        in_addr = NULL;
+        break;
     }
     return in_addr;
 }
@@ -164,15 +165,15 @@ afamily_tostring(const int afamily)
     
     ipver = malloc(ipver_chars + 1);
     switch (afamily) {
-        case AF_INET:
-            ipver = "IPv4";
-            break;
-        case AF_INET6:
-            ipver = "IPv6";
-            break;
-        default:
-            ipver = "????";
-            break;
+    case AF_INET:
+        ipver = "IPv4";
+        break;
+    case AF_INET6:
+        ipver = "IPv6";
+        break;
+    default:
+        ipver = "????";
+        break;
     }
     return ipver;
 }
