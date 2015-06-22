@@ -246,7 +246,7 @@ is_valid_login(const Credentials login)
     const Credentials users[NO_OF_USERS] =
             {{"pippo", "pluto"}, {"admin", "admin"}, {"test", "test1234"}};
 
-    for(i = 0; i < NO_OF_USERS; i++) {
+    for(i = 0; i < NO_OF_USERS; ++i) {
         uname_matches = strcmp(login.uname, users[i].uname) == 0;
         pword_matches = strcmp(login.pword, users[i].pword) == 0;
         if(uname_matches && pword_matches) return 1;    /* true  */

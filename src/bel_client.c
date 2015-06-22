@@ -13,9 +13,41 @@
 #include <unistd.h>
 
 #define ARGC_OK 2
+#define NO_OF_MENUITEMS 4
+
+
+typedef struct {
+    
+    /* 
+     * beware: lengths include the '\0' terminator, so actual lengths are 1 byte
+     * shorter
+     */
+    
+        #define MENU_NAME_MAXLEN 8
+    char name[MENU_NAME_MAXLEN];
+    
+        #define MENU_DESCR_MAXLEN 64
+    char descr[MENU_DESCR_MAXLEN];
+    
+    void (*action)();
+} MenuItem, *Menu;
+
 
 void chop_newline(char*);
 int ok_from_server(void);
+
+void read_all_messages(void);
+void send_new_message(void);
+void delete_message(void);
+void user_quit(void);
+
+
+const MenuItem menu[NO_OF_MENUITEMS] = {
+        {"read", "read all messages", read_all_messages},
+        {"send", "send new message", send_new_message},
+        {"delete", "deletes a message", delete_message},
+        {"quit", "quits program", user_quit}
+        };
 
 
 /* (file descriptor of) the socket used to communicate with server  */
@@ -125,8 +157,12 @@ authenticate(void) {
 void
 send_credentials(void)
 {
+    int i;
     char uname[UNAME_MSGLEN + 1];   /* +1 for \n  */
     char pword[PWORD_MSGLEN + 1];   /* +1 for \n  */
+    
+    for (i = 0; i < UNAME_MSGLEN + 1; ++i) uname[i] = '\0';
+    for (i = 0; i < PWORD_MSGLEN + 1; ++i) pword[i] = '\0';
     
     printf("insert your username (max %d characters): ", UNAME_MSGLEN - 1);
     chop_newline(fgets(uname, sizeof(uname), stdin));
@@ -138,72 +174,100 @@ send_credentials(void)
 }
 
 
-/* TODO: use a Command struct to kill the switch  */
 /* Actual business logic of the client  */
 void
 run_client(void)
 {
-    char command;
+    int i;
+    char input_buf[MENU_NAME_MAXLEN + 1];   /* +1 for \n  */
     
-    void read_all_messages(void);
-    void send_new_message(void);
-    void remove_message(void);
-    void user_quit(void);
-    void invalid_command(void);
+    void show_menu();
+    void read_user_choice(char*);
+    void (*retrieve_menu_action(char*))(void);
     
     for (;;) {
-        fflush(stdin);  /* clearing the keyboard buffer to avoid surprises  */
-        printf( "\n[1] read all messages"
-                "\n[2] send new message"
-                "\n[3] remove message"
-                "\n[4] quit"
-                "\nEnter a command: ");
-        command = getchar();
-        putchar('\n');
-        switch(command) {
-        case '1':
-            read_all_messages();
-            break;
-        case '2':
-            send_new_message();
-            break;
-        case '3':
-            remove_message();
-            break;
-        case '4':
-            user_quit();
-            break;
-        default:
-            invalid_command();
-            break;
-        }
+        show_menu();
+        for (i = 0; i < MENU_NAME_MAXLEN + 1; ++i) input_buf[i] = '\0';
+        read_user_choice(input_buf);
+        retrieve_menu_action(input_buf)();
     }
 }
 
 void
+show_menu()
+{
+    int i;
+    
+    for (i = 0; i < NO_OF_MENUITEMS; ++i) {
+        printf("\n[%s]\t%s", menu[i].name, menu[i].descr);
+    }
+}
+
+/* Prompts the user and then fills the given buffer with user input  */
+void
+read_user_choice(char* input_buf) {
+    fflush(stdin);  /* clearing the keyboard buffer to avoid surprises  */
+    
+    printf("\nEnter a command: ");
+    chop_newline(fgets(input_buf, sizeof(input_buf), stdin));
+}
+
+/*
+ * Returns the menu action that matches the given name. If no action matches,
+ * the "null-action" invalid_command is returned instead
+ */
+void
+(*retrieve_menu_action(char* menu_item_name))(void)
+{
+    int i;
+    
+    void invalid_command(void);
+    
+    for(i = 0; i < NO_OF_MENUITEMS; ++i) {
+        if (strcmp(menu_item_name, menu[i].name) == 0) return menu[i].action;
+    }
+    return invalid_command;
+}
+
+/*
+ * Just informs the user that the command entered did not match any action in
+ * the menu. This behaviour is defined as a function to avoid NULL-checking.
+ */
+void
+invalid_command(void)
+{
+    printf("Invalid command entered\n");
+}
+
+
+void
 read_all_messages(void) {
+    printf("[TRACE] inside read_all_messages\n");
+    
     /* TODO: implement  */
+    
 }
 
 void
 send_new_message(void) {
+    printf("[TRACE] inside send_new_message\n");
+    
     /* TODO: implement  */
+    
 }
 
 void
-remove_message(void) {
+delete_message(void) {
+    printf("[TRACE] inside delete_message\n");
+    
     /* TODO: implement  */
+    
 }
 
 void
 user_quit(void) {
     printf("Goodbye!\n");
     exit(EXIT_SUCCESS);
-}
-
-void
-invalid_command(void) {
-    /* TODO: implement  */
 }
 
 
