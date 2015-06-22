@@ -157,13 +157,9 @@ authenticate(void) {
 void
 send_credentials(void)
 {
-    int i;
-    char uname[UNAME_MSGLEN + 1];   /* +1 for \n  */
-    char pword[PWORD_MSGLEN + 1];   /* +1 for \n  */
-    
-    for (i = 0; i < UNAME_MSGLEN + 1; ++i) uname[i] = '\0';
-    for (i = 0; i < PWORD_MSGLEN + 1; ++i) pword[i] = '\0';
-    
+    char uname[UNAME_MSGLEN + 1] = "";  /* +1 for \n  */
+    char pword[PWORD_MSGLEN + 1] = "";  /* +1 for \n  */
+        
     printf("insert your username (max %d characters): ", UNAME_MSGLEN - 1);
     chop_newline(fgets(uname, sizeof(uname), stdin));
     bel_sendall_or_die(sockfd, uname, UNAME_MSGLEN);
@@ -178,8 +174,7 @@ send_credentials(void)
 void
 run_client(void)
 {
-    int i;
-    char input_buf[MENU_NAME_MAXLEN + 1];   /* +1 for \n  */
+    char input_buf[MENU_NAME_MAXLEN + 1] = "";  /* +1 for \n  */
     
     void show_menu();
     void read_user_choice(char*);
@@ -187,7 +182,6 @@ run_client(void)
     
     for (;;) {
         show_menu();
-        for (i = 0; i < MENU_NAME_MAXLEN + 1; ++i) input_buf[i] = '\0';
         read_user_choice(input_buf);
         retrieve_menu_action(input_buf)();
     }
@@ -197,17 +191,20 @@ void
 show_menu()
 {
     int i;
+    char bracketed_name[MENU_NAME_MAXLEN + 2] = "";
     
     for (i = 0; i < NO_OF_MENUITEMS; ++i) {
-        printf("\n[%s]\t%s", menu[i].name, menu[i].descr);
+        sprintf(bracketed_name, "[%s]", menu[i].name);
+        printf("\n%*s %s", MENU_NAME_MAXLEN + 2, bracketed_name, menu[i].descr);
     }
 }
 
 /* Prompts the user and then fills the given buffer with user input  */
 void
-read_user_choice(char* input_buf) {
+read_user_choice(char* input_buf)
+{
     fflush(stdin);  /* clearing the keyboard buffer to avoid surprises  */
-    
+
     printf("\nEnter a command: ");
     chop_newline(fgets(input_buf, sizeof(input_buf), stdin));
 }
