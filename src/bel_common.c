@@ -9,10 +9,7 @@
 
 #define PORT_MAXCHARS 5
 
-/*
- * Closes the given file (a socket is a file). Does nothing on invalid
- * descriptors. Exits on error
- */
+
 void
 bel_close_or_die(const int fd)
 {
@@ -28,9 +25,6 @@ bel_close_or_die(const int fd)
 }
 
 
-/*
- * Creates a new socket and returns its file descriptor, or -1 in case of error
- */
 int
 bel_new_sock(const struct addrinfo ainfo)
 {
@@ -44,10 +38,6 @@ bel_new_sock(const struct addrinfo ainfo)
 }
 
 
-/*
- * Fills servinfo with the list of internet addresses associated with the given
- * ip and port. Exits program on error!
- */
 void
 bel_getaddrinfo_or_die(
         const char* const ip, const u_short port, struct addrinfo **servinfo)
@@ -83,10 +73,6 @@ make_hints(void)
 }
 
 
-/*
- * Prints a string representation of the given socket address, prepending the
- * given prefix
- */
 void
 bel_print_address(const char* const prefix, const struct sockaddr *sa)
 {
@@ -154,6 +140,7 @@ concat(const char* const s1, const char* const s2)
     return result;
 }
 
+/* TODO: memory leak? */
 /*
  * Returns a 4-character string representation of the given address family.
  * Returns "????" on unknown families.
@@ -180,10 +167,6 @@ afamily_tostring(const int afamily)
 }
 
 
-/*
- * Reads <len> bytes of data to <buf> from the socket <sockfd>. Exits the
- * process on failure or disconnection
- */
 void
 bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
 {
@@ -228,10 +211,6 @@ do_recv_or_die(const int sockfd, char *buf, const size_t len) {
 }
 
 
-/*
- * Sends <len> bytes of data from <buf> to the socket <sockfd>. Exits the
- * process on failure or disconnection
- */
 void
 bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
 {
