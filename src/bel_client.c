@@ -2,8 +2,9 @@
  * bel_client.c - Client part of the OS1 assignment
  *
  * General considerations:
- * - communication protocol is based on fixed-length messages
- * - every communication failure or server "KO" answer will shutdown the program
+ * - the communication protocol is based on fixed-length messages
+ * - every communication failure or server "KO" answer will shutdown the
+ *      program
  */
 
 #include "bel_common.h"
@@ -16,11 +17,13 @@
 #define NO_OF_MENUITEMS 4
 
 
+typedef void (*Action)();
+
 typedef struct {
     
     /* 
-     * beware: lengths include the '\0' terminator, so actual lengths are 1 byte
-     * shorter
+     * beware: lengths include the '\0' terminator, so actual lengths are 1
+     * byte shorter
      */
     
         #define MENU_NAME_MAXLEN 8
@@ -29,7 +32,7 @@ typedef struct {
         #define MENU_DESCR_MAXLEN 64
     char descr[MENU_DESCR_MAXLEN];
     
-    void (*action)();
+    Action action;
 } MenuItem, *Menu;
 
 
@@ -113,10 +116,10 @@ connect_to(const char* const ip, const u_short port)
 }
 
 /*
- * Performs the actual connection logic: creates a socket and uses it to connect
- * to the specified address.
- * Saves the file descriptor of the newly-created socket into sockfd. Returns
- * the file descriptor, or -1 on error.
+ * Performs the actual connection logic: creates a socket and uses it to
+ * connect to the specified address.
+ * Saves the file descriptor of the newly-created socket into sockfd.
+ * Returns the file descriptor, or -1 on error.
  */
 int
 do_connect(struct addrinfo *ainfo)
@@ -138,7 +141,9 @@ do_connect(struct addrinfo *ainfo)
 }
 
 
-/* Authenticates against the server and exits the program on bad credentials  */
+/*
+ * Authenticates against the server and exits the program on bad credentials
+ */
 void
 authenticate(void) {
     void send_credentials(void);
@@ -178,7 +183,7 @@ run_client(void)
     
     void show_menu();
     void read_user_choice(char*);
-    void (*retrieve_menu_action(char*))(void);
+    Action retrieve_menu_action(char*);
     
     for (;;) {
         show_menu();
@@ -195,7 +200,8 @@ show_menu()
     
     for (i = 0; i < NO_OF_MENUITEMS; ++i) {
         sprintf(bracketed_name, "[%s]", menu[i].name);
-        printf("\n%*s %s", MENU_NAME_MAXLEN + 2, bracketed_name, menu[i].descr);
+        printf("\n%*s %s",
+                MENU_NAME_MAXLEN + 2, bracketed_name, menu[i].descr);
     }
 }
 
@@ -213,8 +219,8 @@ read_user_choice(char* input_buf)
  * Returns the menu action that matches the given name. If no action matches,
  * the "null-action" invalid_command is returned instead
  */
-void
-(*retrieve_menu_action(char* menu_item_name))(void)
+Action
+retrieve_menu_action(char* menu_item_name)
 {
     int i;
     

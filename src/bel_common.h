@@ -7,8 +7,8 @@
 #define COMM_PORT 7477
 
 /*
- * Message lengths for client-server communication. Last byte will always be the
- * string terminator '\0', so the actual payload is always one byte shorter
+ * Message lengths for client-server communication. Last byte will always be
+ * the string terminator '\0', so the actual payload is always one byte shorter
  */
 #define UNAME_MSGLEN 32
 #define PWORD_MSGLEN 32

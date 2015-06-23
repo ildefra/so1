@@ -119,8 +119,8 @@ do_bind(struct addrinfo *ainfo)
 }
 
 /*
- * Used before bind to force binding (use "man setsockopt" for details). If this
- * call fails something bad happened, so we exit the program
+ * Used before bind to force binding (use "man setsockopt" for details).
+ * If this call fails something bad happened, so we exit the program
  */
 void
 set_reuseaddr_or_die(void)
@@ -136,7 +136,7 @@ set_reuseaddr_or_die(void)
 }
 
 
-/* Performs the listen() syscall, and exits the program if it fails */
+/* Performs the listen() syscall, and exits the program if it fails  */
 void
 do_listen_or_die(void)
 {
@@ -175,8 +175,8 @@ server_loop(void)
 }
 
 /*
- * Blocks until an incoming client request arrives, and then creates a socket to
- * serve this specific client.
+ * Blocks until an incoming client request arrives, and then creates a socket
+ * to serve this specific client.
  * Saves the file descriptor of the newly-created socket into sockfd_acc.
  * Returns the file descriptor, or -1 on error.
  */
@@ -236,8 +236,8 @@ authenticate_or_die(void)
 }
 
 /*
- * Returns 1 if given credentials match one of the registered (hardcoded) users,
- * 0 otherwise
+ * Returns 1 if given credentials match one of the registered (hardcoded)
+ * users, 0 otherwise
  */
 int
 is_valid_login(const Credentials login)

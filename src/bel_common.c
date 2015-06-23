@@ -105,8 +105,9 @@ bel_print_address(const char* const prefix, const struct sockaddr *sa)
 }
 
 /*
- * Gets the internet address from the given sockaddr, switching between IPv4 and
- * IPv6 depending on the address family (IPv4 or IPv6). Returns NULL on error
+ * Gets the internet address from the given sockaddr, switching between IPv4
+ * and IPv6 depending on the address family (IPv4 or IPv6).
+ * Returns NULL on error
  */
 void*
 get_inaddr(const struct sockaddr *sa)
@@ -196,10 +197,11 @@ bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
     printf(debug_msg, (unsigned long) len, sockfd);
     bytes_left = len;
     while (bytes_left > 0) {
-        bytes_read = do_recv_or_die(sockfd, buf + len - bytes_left, bytes_left);
+        bytes_read =
+                do_recv_or_die(sockfd, buf + len - bytes_left, bytes_left);
         bytes_left -= bytes_read;
     }
-    buf[bytes_read] = '\0';   /* null terminator must be added after reading */
+    buf[bytes_read] = '\0';   /* must add the null terminator after reading  */
     printf("[DEBUG] message received: '%s'\n", buf);
 }
 
@@ -243,7 +245,8 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
     printf(debug_msg, (unsigned long) len, sockfd);
     bytes_left = len;
     while (bytes_left > 0) {
-        bytes_sent = do_send_or_die(sockfd, buf + len - bytes_left, bytes_left);
+        bytes_sent =
+                do_send_or_die(sockfd, buf + len - bytes_left, bytes_left);
         bytes_left -= bytes_sent;
     }
 }
@@ -251,9 +254,10 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
 /*
  * Performs the send() system call, and exits the program on failure or
  * disconnection.
- * The MSG_NOSIGNAL flag is used during the call, in order to make send() return
- * a 'Broken Pipe' error instead of a SIGPIPE, which would crash the application
- * if unhandled (it exits anyway, but at least an error message is shown)
+ * The MSG_NOSIGNAL flag is used during the call, in order to make send()
+ * return a 'Broken Pipe' error instead of a SIGPIPE, which would crash the
+ * application if unhandled (it exits anyway, but at least an error message is
+ * shown)
  */
 ssize_t
 do_send_or_die(const int sockfd, const char* const buf, const size_t len) {
