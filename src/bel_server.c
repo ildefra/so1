@@ -276,6 +276,10 @@ handle_read(void)
 static void
 handle_send(void)
 {
+    char client_msg[STD_MSGLEN];
+    
+    bel_recvall_or_die(sockfd_acc, client_msg, STD_MSGLEN);
+    bel_recvall_or_die(sockfd_acc, client_msg, STD_MSGLEN);
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }
 

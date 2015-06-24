@@ -118,7 +118,7 @@ connect_to(const char* const ip, const u_short port)
         if (do_connect_res != -1) break;
     }
     if (currinfo == NULL) {
-        fprintf(stderr, "[FATAL] Failed to connect: exiting\n");
+        fprintf(stderr, "[FATAL] failed to connect: exiting\n");
         exit(EXIT_FAILURE);
     }
     freeaddrinfo(servinfo);
@@ -253,15 +253,27 @@ read_all_messages(void) {
     
     /* TODO: implement  */
     
+    printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
 }
 
 static void
 send_new_message(void) {
+    char input_buf[STD_MSGLEN + 1]; /* +1 for \n  */
+    
     printf("[TRACE] inside send_new_message\n");
     bel_sendall_or_die(sockfd, CMD_SEND, CMD_MSGLEN);
     
-    /* TODO: implement  */
+    printf("Subject:\n");
+    memset(input_buf, 0, STD_MSGLEN + 1);
+    chop_newline(fgets(input_buf, sizeof(input_buf), stdin));
+    bel_sendall_or_die(sockfd, input_buf, STD_MSGLEN + 1);
+
+    printf("Body:\n");
+    memset(input_buf, 0, STD_MSGLEN + 1);
+    chop_newline(fgets(input_buf, sizeof(input_buf), stdin));
+    bel_sendall_or_die(sockfd, input_buf, STD_MSGLEN + 1);
     
+    printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
 }
 
 static void
@@ -271,6 +283,7 @@ delete_message(void) {
     
     /* TODO: implement  */
     
+    printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
 }
 
 static void
