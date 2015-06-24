@@ -54,7 +54,7 @@ void
 bel_getaddrinfo_or_die(
         const char* const ip, const u_short port, struct addrinfo **servinfo)
 {
-    char port_str[PORT_MAXCHARS];
+    char port_str[PORT_MAXCHARS] = "";
     struct addrinfo hints;
     int getaddrinfo_res;
     const char* const err_msg = "[FATAL] getaddrinfo(): %s\n";
@@ -86,10 +86,10 @@ make_hints(void)
 void
 bel_print_address(const char* const prefix, const struct sockaddr *sa)
 {
-    char ipstr[INET6_ADDRSTRLEN];
-    char* full_template = NULL;
+    char ipstr[INET6_ADDRSTRLEN] = "";
+    char *full_template = NULL;
     const char* const addr_template = "%s address %s\n";
-        
+    
     inet_ntop(sa->sa_family, get_inaddr(sa), ipstr, sizeof(ipstr));
     full_template = concat(prefix, addr_template);
     printf(full_template, afamily_tostring(sa->sa_family), ipstr);
@@ -123,9 +123,10 @@ get_inaddr(const struct sockaddr *sa)
 }
 
 /*
- * Concatenates the two given strings on a newly-allocated block of memory. It
- * is responsibility of the caller to free the memory when it is no longer
- * needed. Returns NULL if malloc() fails
+ * Concatenates the two given strings on a newly-allocated block of memory.
+ * It is responsibility of the caller to free the memory when it is no longer
+ * needed.
+ * Returns NULL if malloc() fails
  */
 static char*
 concat(const char* const s1, const char* const s2)
@@ -146,7 +147,6 @@ concat(const char* const s1, const char* const s2)
     return result;
 }
 
-/* TODO: memory leak? */
 /*
  * Returns a 4-character string representation of the given address family.
  * Returns "????" on unknown families.
@@ -154,22 +154,11 @@ concat(const char* const s1, const char* const s2)
 static const char*
 afamily_tostring(const int afamily)
 {
-    char *ipver;
-    const int ipver_chars = 4;
-    
-    ipver = malloc(ipver_chars + 1);
     switch (afamily) {
-    case AF_INET:
-        ipver = "IPv4";
-        break;
-    case AF_INET6:
-        ipver = "IPv6";
-        break;
-    default:
-        ipver = "????";
-        break;
+    case AF_INET:   return "IPv4";
+    case AF_INET6:  return "IPv6";
+    default:        return "????";
     }
-    return ipver;
 }
 
 

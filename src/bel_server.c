@@ -218,6 +218,7 @@ handle_client(void)
     
     authenticate_or_die();
     for(;;) {
+        memset(cmd, 0, CMD_MSGLEN);
         bel_recvall_or_die(sockfd_acc, cmd, CMD_MSGLEN);
         if (strcmp(cmd, CMD_READ) == 0) {
             handle_read();

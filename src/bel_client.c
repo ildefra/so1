@@ -186,9 +186,10 @@ send_credentials(void)
 static void
 run_client(void)
 {
-    char input_buf[MENU_NAME_MAXLEN + 1] = "";  /* +1 for \n  */
+    char input_buf[MENU_NAME_MAXLEN + 1];   /* +1 for \n  */
     
     for (;;) {
+        memset(input_buf, 0, MENU_NAME_MAXLEN + 1);
         show_menu();
         read_user_choice(input_buf);
         retrieve_menu_action(input_buf)();
@@ -199,9 +200,10 @@ static void
 show_menu()
 {
     int i;
-    char bracketed_name[MENU_NAME_MAXLEN + 2] = "";
+    char bracketed_name[MENU_NAME_MAXLEN + 2];
     
     for (i = 0; i < NO_OF_MENUITEMS; ++i) {
+        memset(bracketed_name, 0, MENU_NAME_MAXLEN + 2);
         sprintf(bracketed_name, "[%s]", menu[i].name);
         printf("\n%*s %s",
                 MENU_NAME_MAXLEN + 2, bracketed_name, menu[i].descr);
@@ -210,7 +212,7 @@ show_menu()
 
 /* Prompts the user and then fills the given buffer with user input  */
 static void
-read_user_choice(char* input_buf)
+read_user_choice(char *input_buf)
 {
     fflush(stdin);  /* clearing the keyboard buffer to avoid surprises  */
 
@@ -223,7 +225,7 @@ read_user_choice(char* input_buf)
  * the "null-action" invalid_command is returned instead
  */
 static Action
-retrieve_menu_action(char* menu_item_name)
+retrieve_menu_action(char *menu_item_name)
 {
     int i;
     
@@ -285,7 +287,7 @@ user_quit(void) {
 static int
 ok_from_server(void)
 {
-    char answer[ANSWER_MSGLEN];
+    char answer[ANSWER_MSGLEN] = "";
     
     bel_recvall_or_die(sockfd, answer, ANSWER_MSGLEN);
     return strcmp(answer, ANSWER_OK) == 0;
