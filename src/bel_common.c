@@ -191,7 +191,7 @@ do_recv_or_die(const int sockfd, char *buf, const size_t len) {
     
     printf("[TRACE] inside do_recv_or_die\n");
     bytes_read = recv(sockfd, buf, len, 0);
-    printf("[TRACE] send() syscall returned '%ld'\n", (long) bytes_read);
+    printf("[TRACE] recv() syscall returned '%ld'\n", (long) bytes_read);
     if (bytes_read == -1) {
         perror("[ERROR] recv()");
         exit(EXIT_FAILURE);
