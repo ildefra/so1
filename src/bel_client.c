@@ -228,11 +228,13 @@ reset_stdin(void)
 static void
 read_all_messages(void)
 {
+    char all_messages[STD_MSGLEN] = "";
+    
     printf("[TRACE] inside read_all_messages\n");
     bel_sendall_or_die(sockfd, CMD_READ, CMD_MSGLEN);
     
-    /* TODO: implement  */
-    
+    bel_recvall_or_die(sockfd, all_messages, STD_MSGLEN);
+    printf("%s", all_messages);
 }
 
 static void
@@ -248,11 +250,15 @@ send_new_message(void)
 static void
 delete_message(void)
 {
+    char my_messages[STD_MSGLEN] = "";
+    
     printf("[TRACE] inside delete_message\n");
     bel_sendall_or_die(sockfd, CMD_DELETE, CMD_MSGLEN);
     
-    /* TODO: implement  */
-    
+    printf("Here are your messages:\n");
+    bel_recvall_or_die(sockfd, my_messages, STD_MSGLEN);
+    printf("%s", my_messages);
+    send_user_input_to_server("Enter the message to delete", STD_MSGLEN);
 }
 
 static void

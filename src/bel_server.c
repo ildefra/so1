@@ -234,9 +234,7 @@ handle_client(void)
     }
 
     for(;;) {
-        printf("[TRACE] cmd = '%s'\n", cmd);
         memset(cmd, 0, CMD_MSGLEN);
-        printf("[TRACE] cmd = '%s'\n", cmd);
         bel_recvall_or_die(sockfd_acc, cmd, CMD_MSGLEN);
         printf("[TRACE] cmd = '%s'\n", cmd);
         if (strcmp(cmd, CMD_READ) == 0) {
@@ -246,7 +244,7 @@ handle_client(void)
         } else if (strcmp(cmd, CMD_DELETE) == 0) {
             handle_delete();
         } else {
-            bel_sendall_or_die(sockfd_acc, ANSWER_KO, ANSWER_MSGLEN);
+            printf("[WARN] unrecognized message '%s'\n", cmd");
         }
     }
 }
@@ -294,6 +292,7 @@ is_valid_login(const Credentials login)
 static void
 handle_read(void)
 {
+    
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }
 
