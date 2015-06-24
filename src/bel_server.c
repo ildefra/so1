@@ -244,7 +244,7 @@ handle_client(void)
         } else if (strcmp(cmd, CMD_DELETE) == 0) {
             handle_delete();
         } else {
-            printf("[WARN] unrecognized message '%s'\n", cmd");
+            printf("[WARN] unrecognized message '%s'\n", cmd);
         }
     }
 }
@@ -292,7 +292,10 @@ is_valid_login(const Credentials login)
 static void
 handle_read(void)
 {
+    FILE *db;
     
+    db = open_db_or_die("r");
+    do_fclose_or_die(db);
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }
 
@@ -313,7 +316,7 @@ handle_send(void)
     bel_recvall_or_die(sockfd_acc, subject, STD_MSGLEN);
     bel_recvall_or_die(sockfd_acc, body, STD_MSGLEN);
 
-    db = open_db_or_die();
+    db = open_db_or_die("a");
     printf("[TRACE] current_user = '%s', subject = '%s', body='%s'\n",
             current_user, subject, body);
     fprintf(db, "%s\n%s\n%s\n\n", current_user, subject, body);
@@ -326,11 +329,11 @@ handle_send(void)
 }
 
 static FILE*
-open_db_or_die(void)
+open_db_or_die(const char* const flags)
 {
     FILE *db;
     
-    db = fopen(DB_FILENAME, "a");
+    db = fopen(DB_FILENAME, flags);
     if (db == NULL) {
         perror("[ERROR] fopen()");
         exit(EXIT_FAILURE);
@@ -354,5 +357,9 @@ do_fclose_or_die(FILE* db)
 static void
 handle_delete(void)
 {
+    FILE *db;
+    
+    db = open_db_or_die("w+");
+    do_fclose_or_die(db);
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }

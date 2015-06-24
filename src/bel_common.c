@@ -75,7 +75,7 @@ make_hints(void)
     struct addrinfo hints;
     
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family     = AF_UNSPEC;
+    hints.ai_family     = AF_INET;
     hints.ai_socktype   = SOCK_STREAM;
     
     return hints;
@@ -139,18 +139,20 @@ afamily_tostring(const int afamily)
 void
 bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
 {
+    char *ptr = NULL;
     size_t  bytes_left;
     ssize_t bytes_read;
     
     printf("[TRACE] bel_recvall_or_die - buf = '%s', len = '%lu'\n",
             buf, (unsigned long) len);
+    ptr = buf;
     bytes_left = len;
     while (bytes_left > 0) {
         bytes_read =
-                do_recv_or_die(sockfd, buf + len - bytes_left, bytes_left);
+                do_recv_or_die(sockfd, ptr + len - bytes_left, bytes_left);
         bytes_left -= bytes_read;
     }
-    buf[len] = '\0';    /* must add the null terminator after reading  */
+    buf[len - 1] = '\0';    /* must add the null terminator after reading  */
     printf("[DEBUG] message received: '%s'\n", buf);
 }
 
