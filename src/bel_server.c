@@ -41,7 +41,7 @@ static void handle_read(void);
 static void handle_send(void);
 static void handle_delete(void);
 
-static FILE* open_db_or_die(void);
+static FILE* open_db_or_die(const char* const);
 static void do_fclose_or_die(FILE*);
 
 
