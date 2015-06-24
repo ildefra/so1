@@ -15,7 +15,6 @@
 static struct addrinfo make_hints(void);
 
 static void* get_inaddr(const struct sockaddr *sa);
-static char* concat(const char* const s1, const char* const s2);
 static const char* afamily_tostring(const int);
 
 static ssize_t do_recv_or_die(const int, char*, const size_t);
@@ -122,26 +121,6 @@ get_inaddr(const struct sockaddr *sa)
     return in_addr;
 }
 
-
-char*
-bel_concat(const char* const s1, const char* const s2)
-{
-    size_t len1, len2;
-    char *result = NULL;
-    
-    len1 = strlen(s1);
-    len2 = strlen(s2);
-    result = malloc(len1 + len2 + 1);  /* +1 for the zero terminator  */
-    if (result == NULL) return NULL;
-    
-    memcpy(result, s1, len1);
-    
-    /* +1 in order to also copy the zero terminator  */
-    memcpy(result + len1, s2, len2 + 1);
-    
-    return result;
-}
-
 /*
  * Returns a 4-character string representation of the given address family.
  * Returns "????" on unknown families.
@@ -240,4 +219,24 @@ do_send_or_die(const int sockfd, const char* const buf, const size_t len) {
         exit(EXIT_SUCCESS);
     }
     return bytes_sent;
+}
+
+
+char*
+bel_concat(const char* const s1, const char* const s2)
+{
+    size_t len1, len2;
+    char *result = NULL;
+    
+    len1 = strlen(s1);
+    len2 = strlen(s2);
+    result = malloc(len1 + len2 + 1);  /* +1 for the zero terminator  */
+    if (result == NULL) return NULL;
+    
+    memcpy(result, s1, len1);
+    
+    /* +1 in order to also copy the zero terminator  */
+    memcpy(result + len1, s2, len2 + 1);
+    
+    return result;
 }
