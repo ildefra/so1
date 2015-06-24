@@ -7,7 +7,19 @@
 #include <string.h>
 #include <unistd.h>
 
+
+/* Maximum number of characters (digits) a port can have  */
 #define PORT_MAXCHARS 5
+
+
+static struct addrinfo make_hints(void);
+
+static void* get_inaddr(const struct sockaddr *sa);
+static char* concat(const char* const s1, const char* const s2);
+static const char* afamily_tostring(const int);
+
+static ssize_t do_recv_or_die(const int, char*, const size_t);
+static ssize_t do_send_or_die(const int, const char* const, const size_t);
 
 
 void
@@ -47,8 +59,6 @@ bel_getaddrinfo_or_die(
     int getaddrinfo_res;
     const char* const err_msg = "[FATAL] getaddrinfo(): %s\n";
     
-    struct addrinfo make_hints(void);
-    
     printf("[TRACE] inside bel_getaddrinfo_or_die\n");
     sprintf(port_str, "%d", port);
     hints = make_hints();
@@ -60,7 +70,7 @@ bel_getaddrinfo_or_die(
     }
 }
 
-struct addrinfo
+static struct addrinfo
 make_hints(void)
 {
     struct addrinfo hints;
@@ -79,11 +89,7 @@ bel_print_address(const char* const prefix, const struct sockaddr *sa)
     char ipstr[INET6_ADDRSTRLEN];
     char* full_template = NULL;
     const char* const addr_template = "%s address %s\n";
-    
-    void* get_inaddr(const struct sockaddr *sa);
-    char* concat(const char* const s1, const char* const s2);
-    const char* afamily_tostring(const int);
-    
+        
     inet_ntop(sa->sa_family, get_inaddr(sa), ipstr, sizeof(ipstr));
     full_template = concat(prefix, addr_template);
     printf(full_template, afamily_tostring(sa->sa_family), ipstr);
@@ -95,7 +101,7 @@ bel_print_address(const char* const prefix, const struct sockaddr *sa)
  * and IPv6 depending on the address family (IPv4 or IPv6).
  * Returns NULL on error
  */
-void*
+static void*
 get_inaddr(const struct sockaddr *sa)
 {
     void *in_addr;
@@ -121,7 +127,7 @@ get_inaddr(const struct sockaddr *sa)
  * is responsibility of the caller to free the memory when it is no longer
  * needed. Returns NULL if malloc() fails
  */
-char*
+static char*
 concat(const char* const s1, const char* const s2)
 {
     size_t len1, len2;
@@ -145,7 +151,7 @@ concat(const char* const s1, const char* const s2)
  * Returns a 4-character string representation of the given address family.
  * Returns "????" on unknown families.
  */
-const char*
+static const char*
 afamily_tostring(const int afamily)
 {
     char *ipver;
@@ -175,8 +181,6 @@ bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
     const char* const debug_msg =
             "[DEBUG] reading %lu bytes of data from socket '%d'\n";
     
-    ssize_t do_recv_or_die(const int, char*, const size_t);
-    
     printf(debug_msg, (unsigned long) len, sockfd);
     bytes_left = len;
     while (bytes_left > 0) {
@@ -192,7 +196,7 @@ bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
  * Performs the recv() system call, and exits the program on failure or
  * disconnection
  */
-ssize_t
+static ssize_t
 do_recv_or_die(const int sockfd, char *buf, const size_t len) {
     ssize_t bytes_read;
     
@@ -218,8 +222,6 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
     ssize_t bytes_sent;
     const char* const debug_msg =
             "[DEBUG] sending %lu bytes of data to socket '%d'\n";
-
-    ssize_t do_send_or_die(const int, const char* const, const size_t);
     
     printf(debug_msg, (unsigned long) len, sockfd);
     bytes_left = len;
@@ -238,7 +240,7 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
  * application if unhandled (it exits anyway, but at least an error message is
  * shown)
  */
-ssize_t
+static ssize_t
 do_send_or_die(const int sockfd, const char* const buf, const size_t len) {
     ssize_t bytes_sent;
     

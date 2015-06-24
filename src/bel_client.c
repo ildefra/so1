@@ -13,7 +13,10 @@
 #include <string.h>
 #include <unistd.h>
 
+
+/* Exact number of the arguments required by the program  */
 #define ARGC_OK 2
+
 #define NO_OF_MENUITEMS 4
 
 
@@ -36,13 +39,25 @@ typedef struct {
 } MenuItem, *Menu;
 
 
-void chop_newline(char*);
-int ok_from_server(void);
+static void connect_to(const char* const, const u_short);
+static int do_connect(struct addrinfo*);
 
-void read_all_messages(void);
-void send_new_message(void);
-void delete_message(void);
-void user_quit(void);
+static void authenticate(void);
+static void send_credentials(void);
+
+static void run_client(void);
+static void show_menu();
+static void read_user_choice(char*);
+static Action retrieve_menu_action(char*);
+static void invalid_command(void);
+
+static void read_all_messages(void);
+static void send_new_message(void);
+static void delete_message(void);
+static void user_quit(void);
+
+static int ok_from_server(void);
+static void chop_newline(char*);
 
 
 const MenuItem menu[NO_OF_MENUITEMS] = {
@@ -61,7 +76,7 @@ static int sockfd;
  * Explicitly closes the resources acquired by the current process. Called on
  * process exit
  */
-void
+static void
 cleanup(void)
 {
     printf("[DEBUG] resource cleanup\n");
@@ -72,11 +87,7 @@ cleanup(void)
 /* Client entry point  */
 int
 main(int argc, char **argv)
-{
-    void connect_to(const char* const, const u_short);
-    void authenticate(void);
-    void run_client(void);
-    
+{    
     if (argc != ARGC_OK) {
         printf("usage: client <remote address>\n");
         exit(EXIT_FAILURE);
@@ -95,13 +106,11 @@ main(int argc, char **argv)
  * Gets all the addresses associated to the given ip and port and connects to
  * the first available one
  */
-void
+static void
 connect_to(const char* const ip, const u_short port)
 {
     int do_connect_res;
     struct addrinfo *servinfo = NULL, *currinfo = NULL;
-    
-    int do_connect(struct addrinfo*);
     
     bel_getaddrinfo_or_die(ip, port, &servinfo);
     for(currinfo = servinfo; currinfo != NULL; currinfo = currinfo->ai_next) {
@@ -121,7 +130,7 @@ connect_to(const char* const ip, const u_short port)
  * Saves the file descriptor of the newly-created socket into sockfd.
  * Returns the file descriptor, or -1 on error.
  */
-int
+static int
 do_connect(struct addrinfo *ainfo)
 {
 	int connect_res;
@@ -144,10 +153,8 @@ do_connect(struct addrinfo *ainfo)
 /*
  * Authenticates against the server and exits the program on bad credentials
  */
-void
+static void
 authenticate(void) {
-    void send_credentials(void);
-    
     send_credentials();
     if (!ok_from_server()) {
         printf("wrong username and/or password: exiting\n");
@@ -159,7 +166,7 @@ authenticate(void) {
  * Asks the user for his username and password and sends them to the server for
  * authentication.
  */
-void
+static void
 send_credentials(void)
 {
     char uname[UNAME_MSGLEN + 1] = "";  /* +1 for \n  */
@@ -176,14 +183,10 @@ send_credentials(void)
 
 
 /* Actual business logic of the client  */
-void
+static void
 run_client(void)
 {
     char input_buf[MENU_NAME_MAXLEN + 1] = "";  /* +1 for \n  */
-    
-    void show_menu();
-    void read_user_choice(char*);
-    Action retrieve_menu_action(char*);
     
     for (;;) {
         show_menu();
@@ -192,7 +195,7 @@ run_client(void)
     }
 }
 
-void
+static void
 show_menu()
 {
     int i;
@@ -206,7 +209,7 @@ show_menu()
 }
 
 /* Prompts the user and then fills the given buffer with user input  */
-void
+static void
 read_user_choice(char* input_buf)
 {
     fflush(stdin);  /* clearing the keyboard buffer to avoid surprises  */
@@ -219,12 +222,10 @@ read_user_choice(char* input_buf)
  * Returns the menu action that matches the given name. If no action matches,
  * the "null-action" invalid_command is returned instead
  */
-Action
+static Action
 retrieve_menu_action(char* menu_item_name)
 {
     int i;
-    
-    void invalid_command(void);
     
     for(i = 0; i < NO_OF_MENUITEMS; ++i) {
         if (strcmp(menu_item_name, menu[i].name) == 0) return menu[i].action;
@@ -236,38 +237,41 @@ retrieve_menu_action(char* menu_item_name)
  * Just informs the user that the command entered did not match any action in
  * the menu. This behaviour is defined as a function to avoid NULL-checking.
  */
-void
+static void
 invalid_command(void)
 {
     printf("Invalid command entered\n");
 }
 
 
-void
+static void
 read_all_messages(void) {
     printf("[TRACE] inside read_all_messages\n");
+    bel_sendall_or_die(sockfd, CMD_READ, CMD_MSGLEN);
     
     /* TODO: implement  */
     
 }
 
-void
+static void
 send_new_message(void) {
     printf("[TRACE] inside send_new_message\n");
+    bel_sendall_or_die(sockfd, CMD_SEND, CMD_MSGLEN);
     
     /* TODO: implement  */
     
 }
 
-void
+static void
 delete_message(void) {
     printf("[TRACE] inside delete_message\n");
+    bel_sendall_or_die(sockfd, CMD_DELETE, CMD_MSGLEN);
     
     /* TODO: implement  */
     
 }
 
-void
+static void
 user_quit(void) {
     printf("Goodbye!\n");
     exit(EXIT_SUCCESS);
@@ -278,7 +282,7 @@ user_quit(void) {
  * Waits for an answer from the server. Returns 1 for a positive answer ("OK")
  * and 0 for a negative one (should be "KO", but does not check for it)
  */
-int
+static int
 ok_from_server(void)
 {
     char answer[ANSWER_MSGLEN];
@@ -289,7 +293,7 @@ ok_from_server(void)
 
 
 /* Removes the last character of the given string if it is a newline  */
-void
+static void
 chop_newline(char *str)
 {
     size_t len;

@@ -13,12 +13,31 @@
 #include <string.h>
 #include <unistd.h>
 
+
+/* Number of (hardcoded) registered users in the system  */
 #define NO_OF_USERS 3
+
 
 typedef struct {
     char uname[UNAME_MSGLEN];
     char pword[PWORD_MSGLEN];
 } Credentials;
+
+
+static void bind_to_port(u_short);
+static int do_bind(struct addrinfo*);
+static void set_reuseaddr_or_die(void);
+static void do_listen_or_die(void);
+
+static void server_loop(void);
+static int accept_incoming(void);
+static void handle_client(void);
+static void authenticate_or_die(void);
+static int is_valid_login(const Credentials);
+
+static void handle_read(void);
+static void handle_send(void);
+static void handle_delete(void);
 
 
 /*
@@ -38,7 +57,7 @@ static int sockfd_acc;
  * Explicitly closes the resources acquired by the current process. Called on
  * process exit
  */
-void
+static void
 cleanup(void)
 {
     printf("[DEBUG] resource cleanup\n");
@@ -46,14 +65,11 @@ cleanup(void)
     if (sockfd_acc != 0) bel_close_or_die(sockfd_acc);
 }
 
+
 /* Server entry point  */
 int
 main(void)
-{
-    void bind_to_port(u_short);
-    void do_listen_or_die(void);
-    void server_loop(void);
-    
+{    
     printf("[INFO] program started with pid = '%ld'\n", (long) getpid());
     atexit(cleanup);
     bind_to_port(COMM_PORT);
@@ -71,13 +87,11 @@ main(void)
  * Gets all the addresses associated to the given port and binds to the first
  * available one
  */
-void
+static void
 bind_to_port(const u_short port)
 {
     int do_bind_res;
     struct addrinfo *servinfo = NULL, *currinfo = NULL;
-    
-    int do_bind(struct addrinfo*);
 
     bel_getaddrinfo_or_die(NULL, port, &servinfo);
     for(currinfo = servinfo; currinfo != NULL; currinfo = currinfo->ai_next) {
@@ -97,12 +111,11 @@ bind_to_port(const u_short port)
  * Saves the file descriptor of the newly-created socket into sockfd.
  * Returns the file descriptor, or -1 on error.
  */
-int
+static int
 do_bind(struct addrinfo *ainfo)
 {
 	int bind_res;
     const char* const bind_msg  = "[INFO] binding to ";
-    void set_reuseaddr_or_die(void);
     
     sockfd = bel_new_sock(*ainfo);
     if (sockfd == -1) return -1;
@@ -119,10 +132,10 @@ do_bind(struct addrinfo *ainfo)
 }
 
 /*
- * Used before bind to force binding (use "man setsockopt" for details).
+ * Used before bind() to force binding (use "man setsockopt" for details).
  * If this call fails something bad happened, so we exit the program
  */
-void
+static void
 set_reuseaddr_or_die(void)
 {
     int yes = 1, setsockopt_res;
@@ -137,7 +150,7 @@ set_reuseaddr_or_die(void)
 
 
 /* Performs the listen() syscall, and exits the program if it fails  */
-void
+static void
 do_listen_or_die(void)
 {
     int listen_result;
@@ -152,12 +165,9 @@ do_listen_or_die(void)
 
 
 /* The main server loop, spawning child processes to handle clients  */
-void
+static void
 server_loop(void)
 {
-    int accept_incoming(void);
-    void handle_client(void);
-
     for(;;) {
         if (accept_incoming() == -1) continue;
         switch (fork()) {
@@ -180,7 +190,7 @@ server_loop(void)
  * Saves the file descriptor of the newly-created socket into sockfd_acc.
  * Returns the file descriptor, or -1 on error.
  */
-int
+static int
 accept_incoming(void)
 {
     int addrlen;
@@ -201,30 +211,31 @@ accept_incoming(void)
     return sockfd_acc;
 }
 
-void
+static void
 handle_client(void)
 {
-    char buf[STD_MSGLEN];
+    char cmd[CMD_MSGLEN];
     
-    void authenticate_or_die(void);
-
     authenticate_or_die();
     for(;;) {
-        bel_recvall_or_die(sockfd_acc, buf, STD_MSGLEN);
-        
-        /* TODO: implement actual commands */
-        
-        bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+        bel_recvall_or_die(sockfd_acc, cmd, CMD_MSGLEN);
+        if (strcmp(cmd, CMD_READ) == 0) {
+            handle_read();
+        } else if (strcmp(cmd, CMD_SEND) == 0) {
+            handle_send();
+        } else if (strcmp(cmd, CMD_DELETE) == 0) {
+            handle_delete();
+        } else {
+            bel_sendall_or_die(sockfd_acc, ANSWER_KO, ANSWER_MSGLEN);
+        }
     }
 }
 
 
-void
+static void
 authenticate_or_die(void)
 {
     Credentials login;
-    
-    int is_valid_login(const Credentials);
     
     bel_recvall_or_die(sockfd_acc, login.uname, UNAME_MSGLEN);
     bel_recvall_or_die(sockfd_acc, login.pword, PWORD_MSGLEN);
@@ -239,7 +250,7 @@ authenticate_or_die(void)
  * Returns 1 if given credentials match one of the registered (hardcoded)
  * users, 0 otherwise
  */
-int
+static int
 is_valid_login(const Credentials login)
 {
     int i, uname_matches, pword_matches;
@@ -252,4 +263,23 @@ is_valid_login(const Credentials login)
         if(uname_matches && pword_matches) return 1;    /* true  */
     }
     return 0;   /* false  */
+}
+
+
+static void
+handle_read(void)
+{
+    bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+}
+
+static void
+handle_send(void)
+{
+    bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+}
+
+static void
+handle_delete(void)
+{
+    bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }

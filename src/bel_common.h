@@ -10,14 +10,20 @@
  * Message lengths for client-server communication. Last byte will always be
  * the string terminator '\0', so the actual payload is always one byte shorter
  */
+ 
 #define UNAME_MSGLEN 32
 #define PWORD_MSGLEN 32
-#define STD_MSGLEN 1024
-#define ANSWER_MSGLEN 3
 
+#define CMD_MSGLEN 7
+#define CMD_READ	"READ"
+#define CMD_SEND	"SEND"
+#define CMD_DELETE	"DELETE"
+
+#define ANSWER_MSGLEN 3
 #define ANSWER_OK "OK"
 #define ANSWER_KO "KO"
 
+#define STD_MSGLEN 1024
 
 /*
  * Closes the given file (a socket is a file). Does nothing on invalid
