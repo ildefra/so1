@@ -177,7 +177,7 @@ bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
                 do_recv_or_die(sockfd, buf + len - bytes_left, bytes_left);
         bytes_left -= bytes_read;
     }
-    buf[bytes_read] = '\0';   /* must add the null terminator after reading  */
+    buf[len] = '\0';    /* must add the null terminator after reading  */
     printf("[DEBUG] message received: '%s'\n", buf);
 }
 

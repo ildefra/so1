@@ -276,10 +276,22 @@ handle_read(void)
 static void
 handle_send(void)
 {
-    char client_msg[STD_MSGLEN];
+    char subject[STD_MSGLEN];
+    char body[STD_MSGLEN];
     
-    bel_recvall_or_die(sockfd_acc, client_msg, STD_MSGLEN);
-    bel_recvall_or_die(sockfd_acc, client_msg, STD_MSGLEN);
+    
+    /* WRITE(USER, FILE); */
+    
+    printf("[DEBUG] waiting for message subject from client\n");
+    bel_recvall_or_die(sockfd_acc, subject, STD_MSGLEN);
+    
+    /* WRITE(subject, FILE); */
+    
+    printf("[DEBUG] waiting for message body from client\n");
+    bel_recvall_or_die(sockfd_acc, body, STD_MSGLEN);
+    
+    /* WRITE(body, FILE); */
+    
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }
 
