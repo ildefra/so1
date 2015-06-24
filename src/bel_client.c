@@ -43,13 +43,10 @@ static void connect_to(const char* const, const u_short);
 static int do_connect(struct addrinfo*);
 
 static void authenticate(void);
-static void send_credentials(void);
-
 static void run_client(void);
 static void show_menu();
 static void read_user_choice(char*);
 static Action retrieve_menu_action(char*);
-static void invalid_command(void);
 
 static void read_all_messages(void);
 static void send_new_message(void);
@@ -57,6 +54,7 @@ static void delete_message(void);
 static void user_quit(void);
 
 static int ok_from_server(void);
+static void send_user_input_to_server(const char* const, const int);
 static void chop_newline(char*);
 
 
@@ -151,34 +149,18 @@ do_connect(struct addrinfo *ainfo)
 
 
 /*
- * Authenticates against the server and exits the program on bad credentials
+ * Authenticates against the server with user-submitted credentials.
+ * Exits the program on a negative answer
  */
 static void
-authenticate(void) {
-    send_credentials();
+authenticate(void)
+{
+    send_user_input_to_server("insert your username", UNAME_MSGLEN);
+    send_user_input_to_server("insert your password", PWORD_MSGLEN);
     if (!ok_from_server()) {
         printf("wrong username and/or password: exiting\n");
         exit(EXIT_SUCCESS);
     }
-}
-
-/*
- * Asks the user for his username and password and sends them to the server for
- * authentication.
- */
-static void
-send_credentials(void)
-{
-    char uname[UNAME_MSGLEN + 1] = "";  /* +1 for \n  */
-    char pword[PWORD_MSGLEN + 1] = "";  /* +1 for \n  */
-        
-    printf("insert your username (max %d characters): ", UNAME_MSGLEN - 1);
-    chop_newline(fgets(uname, sizeof(uname), stdin));
-    bel_sendall_or_die(sockfd, uname, UNAME_MSGLEN);
-    
-    printf("insert your password (max %d characters): ", PWORD_MSGLEN - 1);
-    chop_newline(fgets(pword, sizeof(pword), stdin));
-    bel_sendall_or_die(sockfd, pword, PWORD_MSGLEN);
 }
 
 
@@ -187,12 +169,20 @@ static void
 run_client(void)
 {
     char input_buf[MENU_NAME_MAXLEN + 1];   /* +1 for \n  */
+    Action menu_action;
     
     for (;;) {
         memset(input_buf, 0, MENU_NAME_MAXLEN + 1);
         show_menu();
         read_user_choice(input_buf);
-        retrieve_menu_action(input_buf)();
+        menu_action = retrieve_menu_action(input_buf);
+        if (menu_action == NULL) {
+            printf("Invalid command entered\n");
+        } else {
+            menu_action();
+            printf("Server returned %s\n",
+                    ok_from_server() ? ANSWER_OK : ANSWER_KO);
+        }
     }
 }
 
@@ -220,10 +210,7 @@ read_user_choice(char *input_buf)
     chop_newline(fgets(input_buf, sizeof(input_buf), stdin));
 }
 
-/*
- * Returns the menu action that matches the given name. If no action matches,
- * the "null-action" invalid_command is returned instead
- */
+/* Returns the menu action that matches the given name  */
 static Action
 retrieve_menu_action(char *menu_item_name)
 {
@@ -232,62 +219,43 @@ retrieve_menu_action(char *menu_item_name)
     for(i = 0; i < NO_OF_MENUITEMS; ++i) {
         if (strcmp(menu_item_name, menu[i].name) == 0) return menu[i].action;
     }
-    return invalid_command;
+    return NULL;
 }
 
-/*
- * Just informs the user that the command entered did not match any action in
- * the menu. This behaviour is defined as a function to avoid NULL-checking.
- */
+
 static void
-invalid_command(void)
+read_all_messages(void)
 {
-    printf("Invalid command entered\n");
-}
-
-
-static void
-read_all_messages(void) {
     printf("[TRACE] inside read_all_messages\n");
     bel_sendall_or_die(sockfd, CMD_READ, CMD_MSGLEN);
     
     /* TODO: implement  */
     
-    printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
 }
 
 static void
-send_new_message(void) {
-    char input_buf[STD_MSGLEN + 1]; /* +1 for \n  */
-    
+send_new_message(void)
+{
     printf("[TRACE] inside send_new_message\n");
     bel_sendall_or_die(sockfd, CMD_SEND, CMD_MSGLEN);
-    
-    printf("Subject:\n");
-    memset(input_buf, 0, STD_MSGLEN + 1);
-    chop_newline(fgets(input_buf, sizeof(input_buf), stdin));
-    bel_sendall_or_die(sockfd, input_buf, STD_MSGLEN + 1);
 
-    printf("Body:\n");
-    memset(input_buf, 0, STD_MSGLEN + 1);
-    chop_newline(fgets(input_buf, sizeof(input_buf), stdin));
-    bel_sendall_or_die(sockfd, input_buf, STD_MSGLEN + 1);
-    
-    printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
+    send_user_input_to_server("Subject", STD_MSGLEN);
+    send_user_input_to_server("Body", STD_MSGLEN);
 }
 
 static void
-delete_message(void) {
+delete_message(void)
+{
     printf("[TRACE] inside delete_message\n");
     bel_sendall_or_die(sockfd, CMD_DELETE, CMD_MSGLEN);
     
     /* TODO: implement  */
     
-    printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
 }
 
 static void
-user_quit(void) {
+user_quit(void)
+{
     printf("Goodbye!\n");
     exit(EXIT_SUCCESS);
 }
@@ -304,6 +272,33 @@ ok_from_server(void)
     
     bel_recvall_or_die(sockfd, answer, ANSWER_MSGLEN);
     return strcmp(answer, ANSWER_OK) == 0;
+}
+
+
+/*
+ * Prompts the user with the given message plus a size indication, then reads
+ * at most <msglen> bytes from stdin until it encounters a newline character
+ * ('\n'), and finally removes it and sends the result to the server
+ */
+static void
+send_user_input_to_server(const char* const prompt_msg, const int buf_len)
+{
+    char *input_buf = NULL;
+    char *full_template;
+    const char* const size_template = " (max %d characters): ";
+        
+    full_template = bel_concat(prompt_msg, size_template);
+    printf(full_template, buf_len - 1); /* -1 for '\0'  */
+    free(full_template);
+
+    input_buf = calloc(buf_len + 1, 1); /* +1 for '\n'  */
+    if (input_buf == NULL) {
+        perror("[FATAL] calloc()");
+        exit(EXIT_FAILURE);
+    }
+    chop_newline(fgets(input_buf, buf_len + 1, stdin));
+    bel_sendall_or_die(sockfd, input_buf, buf_len);
+    free(input_buf);
 }
 
 

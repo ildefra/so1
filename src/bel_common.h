@@ -64,4 +64,14 @@ bel_recvall_or_die(const int sockfd, char* buf, const size_t len);
 extern void
 bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len);
 
+
+/*
+ * Concatenates the two given strings on a newly-allocated block of memory.
+ * It is responsibility of the caller to free the memory when it is no longer
+ * needed.
+ * Returns NULL if malloc() fails
+ */
+extern char*
+bel_concat(const char* const s1, const char* const s2);
+
 #endif	/* BELCOMMON_H_INCLUDED */

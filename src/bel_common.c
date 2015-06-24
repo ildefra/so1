@@ -91,7 +91,7 @@ bel_print_address(const char* const prefix, const struct sockaddr *sa)
     const char* const addr_template = "%s address %s\n";
     
     inet_ntop(sa->sa_family, get_inaddr(sa), ipstr, sizeof(ipstr));
-    full_template = concat(prefix, addr_template);
+    full_template = bel_concat(prefix, addr_template);
     printf(full_template, afamily_tostring(sa->sa_family), ipstr);
     free(full_template);
 }
@@ -122,14 +122,9 @@ get_inaddr(const struct sockaddr *sa)
     return in_addr;
 }
 
-/*
- * Concatenates the two given strings on a newly-allocated block of memory.
- * It is responsibility of the caller to free the memory when it is no longer
- * needed.
- * Returns NULL if malloc() fails
- */
-static char*
-concat(const char* const s1, const char* const s2)
+
+char*
+bel_concat(const char* const s1, const char* const s2)
 {
     size_t len1, len2;
     char *result = NULL;
