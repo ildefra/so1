@@ -141,10 +141,9 @@ bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
 {
     size_t  bytes_left;
     ssize_t bytes_read;
-    const char* const debug_msg =
-            "[DEBUG] reading %lu bytes of data from socket '%d'\n";
     
-    printf(debug_msg, (unsigned long) len, sockfd);
+    printf("[TRACE] bel_recvall_or_die - buf = '%s', len = '%lu'\n",
+            buf, (unsigned long) len);
     bytes_left = len;
     while (bytes_left > 0) {
         bytes_read =
@@ -163,7 +162,8 @@ static ssize_t
 do_recv_or_die(const int sockfd, char *buf, const size_t len) {
     ssize_t bytes_read;
     
-    printf("[TRACE] inside do_recv_or_die\n");
+    printf("[TRACE] do_recv_or_die - buf = '%s', len = '%lu'\n",
+            buf, (unsigned long) len);
     bytes_read = recv(sockfd, buf, len, 0);
     printf("[TRACE] recv() syscall returned '%ld'\n", (long) bytes_read);
     if (bytes_read == -1) {
@@ -183,10 +183,9 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
 {
     size_t  bytes_left;
     ssize_t bytes_sent;
-    const char* const debug_msg =
-            "[DEBUG] sending %lu bytes of data to socket '%d'\n";
-    
-    printf(debug_msg, (unsigned long) len, sockfd);
+
+    printf("[TRACE] bel_sendall_or_die - buf = '%s', len = '%lu'\n",
+            buf, (unsigned long) len);    
     bytes_left = len;
     while (bytes_left > 0) {
         bytes_sent =
@@ -207,7 +206,8 @@ static ssize_t
 do_send_or_die(const int sockfd, const char* const buf, const size_t len) {
     ssize_t bytes_sent;
     
-    printf("[TRACE] inside do_send_or_die\n");
+    printf("[TRACE] do_send_or_die - buf = '%s', len = '%lu'\n",
+            buf, (unsigned long) len);
     bytes_sent = send(sockfd, buf, len, MSG_NOSIGNAL);
     printf("[TRACE] send() syscall returned '%ld'\n", (long) bytes_sent);
     if (bytes_sent == -1) {

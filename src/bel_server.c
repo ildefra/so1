@@ -17,6 +17,8 @@
 /* Number of (hardcoded) registered users in the system  */
 #define NO_OF_USERS 3
 
+#define DB_FILENAME "db.txt"
+
 
 typedef struct {
     char uname[UNAME_MSGLEN];
@@ -39,6 +41,9 @@ static void handle_read(void);
 static void handle_send(void);
 static void handle_delete(void);
 
+static FILE* open_db_or_die(void);
+static void do_fclose_or_die(FILE*);
+
 
 /*
  * (file descriptor of) the main server socket, which handles new client
@@ -51,6 +56,10 @@ static int sockfd;
  * process has its own
  */
 static int sockfd_acc;
+
+
+/* Name of the user being served right now  */
+static char current_user[UNAME_MSGLEN];
 
 
 /*
@@ -214,12 +223,22 @@ accept_incoming(void)
 static void
 handle_client(void)
 {
-    char cmd[CMD_MSGLEN];
+    char *cmd;
     
     authenticate_or_die();
+    
+    cmd = malloc(CMD_MSGLEN);
+    if (cmd == NULL) {
+        perror("[FATAL] malloc()");
+        exit(EXIT_FAILURE);
+    }
+
     for(;;) {
+        printf("[TRACE] cmd = '%s'\n", cmd);
         memset(cmd, 0, CMD_MSGLEN);
+        printf("[TRACE] cmd = '%s'\n", cmd);
         bel_recvall_or_die(sockfd_acc, cmd, CMD_MSGLEN);
+        printf("[TRACE] cmd = '%s'\n", cmd);
         if (strcmp(cmd, CMD_READ) == 0) {
             handle_read();
         } else if (strcmp(cmd, CMD_SEND) == 0) {
@@ -233,6 +252,10 @@ handle_client(void)
 }
 
 
+/*
+ * Reads user credentials from the wire and then if they are valid it saves the
+ * user name. Otherwise the client-serving process is aborted
+ */
 static void
 authenticate_or_die(void)
 {
@@ -244,6 +267,7 @@ authenticate_or_die(void)
         bel_sendall_or_die(sockfd_acc, ANSWER_KO, ANSWER_MSGLEN);
         exit(EXIT_SUCCESS);
     }
+    strcpy(current_user, login.uname);
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }
 
@@ -273,27 +297,60 @@ handle_read(void)
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }
 
+
 static void
 handle_send(void)
 {
-    char subject[STD_MSGLEN];
-    char body[STD_MSGLEN];
-    
-    
-    /* WRITE(USER, FILE); */
-    
-    printf("[DEBUG] waiting for message subject from client\n");
+    FILE *db = NULL;
+    char* subject;
+    char* body;
+
+    subject = calloc(STD_MSGLEN, 1);
+    body    = calloc(STD_MSGLEN, 1);
+    if (subject == NULL || body == NULL) {
+        perror("[FATAL] calloc()");
+        exit(EXIT_FAILURE);
+    }
     bel_recvall_or_die(sockfd_acc, subject, STD_MSGLEN);
-    
-    /* WRITE(subject, FILE); */
-    
-    printf("[DEBUG] waiting for message body from client\n");
     bel_recvall_or_die(sockfd_acc, body, STD_MSGLEN);
+
+    db = open_db_or_die();
+    printf("[TRACE] current_user = '%s', subject = '%s', body='%s'\n",
+            current_user, subject, body);
+    fprintf(db, "%s\n%s\n%s\n\n", current_user, subject, body);
+    do_fclose_or_die(db);
     
-    /* WRITE(body, FILE); */
+    free(subject);
+    free(body);
     
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }
+
+static FILE*
+open_db_or_die(void)
+{
+    FILE *db;
+    
+    db = fopen(DB_FILENAME, "a");
+    if (db == NULL) {
+        perror("[ERROR] fopen()");
+        exit(EXIT_FAILURE);
+    }
+    return db;
+}
+
+static void
+do_fclose_or_die(FILE* db)
+{
+    int fclose_res;
+    
+    fclose_res = fclose(db);
+    if (fclose_res == EOF) {
+        perror("[ERROR] fclose()");
+        exit(EXIT_FAILURE);
+    }
+}
+
 
 static void
 handle_delete(void)
