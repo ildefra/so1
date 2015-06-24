@@ -44,9 +44,9 @@ static int do_connect(struct addrinfo*);
 
 static void authenticate(void);
 static void run_client(void);
-static void show_menu();
-static void read_user_choice(char*);
-static Action retrieve_menu_action(char*);
+static void show_menu(void);
+static Action read_action_from_user(void);
+static void reset_stdin(void);
 
 static void read_all_messages(void);
 static void send_new_message(void);
@@ -168,16 +168,14 @@ authenticate(void)
 static void
 run_client(void)
 {
-    char input_buf[MENU_NAME_MAXLEN + 1];   /* +1 for \n  */
     Action menu_action;
     
     for (;;) {
-        memset(input_buf, 0, MENU_NAME_MAXLEN + 1);
         show_menu();
-        read_user_choice(input_buf);
-        menu_action = retrieve_menu_action(input_buf);
+        menu_action = read_action_from_user();
         if (menu_action == NULL) {
             printf("Invalid command entered\n");
+            reset_stdin();
         } else {
             menu_action();
             printf("Server returned %s\n",
@@ -187,7 +185,7 @@ run_client(void)
 }
 
 static void
-show_menu()
+show_menu(void)
 {
     int i;
     char bracketed_name[MENU_NAME_MAXLEN + 2];
@@ -200,26 +198,30 @@ show_menu()
     }
 }
 
-/* Prompts the user and then fills the given buffer with user input  */
-static void
-read_user_choice(char *input_buf)
+/* Prompts the user and then returns the menu action matching user input  */
+static Action
+read_action_from_user(void)
 {
-    fflush(stdin);  /* clearing the keyboard buffer to avoid surprises  */
+    int i;
+    char input_buf[MENU_NAME_MAXLEN + 1] = "";  /* +1 for \n  */
 
     printf("\nEnter a command: ");
     chop_newline(fgets(input_buf, sizeof(input_buf), stdin));
-}
-
-/* Returns the menu action that matches the given name  */
-static Action
-retrieve_menu_action(char *menu_item_name)
-{
-    int i;
-    
     for(i = 0; i < NO_OF_MENUITEMS; ++i) {
-        if (strcmp(menu_item_name, menu[i].name) == 0) return menu[i].action;
+        if (strcmp(input_buf, menu[i].name) == 0) return menu[i].action;
     }
     return NULL;
+}
+
+/* Discards all the characters still pending in the stdin buffer  */
+static void
+reset_stdin(void)
+{
+    int c;
+    
+    do {
+        c = getchar();
+    } while(c != '\n' && c != EOF);
 }
 
 

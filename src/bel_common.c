@@ -14,7 +14,7 @@
 
 static struct addrinfo make_hints(void);
 
-static void* get_inaddr(const struct sockaddr *sa);
+static void* get_inaddr(const struct sockaddr*);
 static const char* afamily_tostring(const int);
 
 static ssize_t do_recv_or_die(const int, char*, const size_t);

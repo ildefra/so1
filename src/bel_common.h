@@ -72,6 +72,6 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len);
  * Returns NULL if malloc() fails
  */
 extern char*
-bel_concat(const char* const s1, const char* const s2);
+bel_concat(const char* const, const char* const);
 
 #endif	/* BELCOMMON_H_INCLUDED */
