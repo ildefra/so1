@@ -79,7 +79,7 @@ cleanup(void)
 int
 main(void)
 {    
-    printf("[INFO] program started with pid = '%ld'\n", (long) getpid());
+    printf("[DEBUG] program started with pid = '%ld'\n", (long) getpid());
     atexit(cleanup);
     bind_to_port(COMM_PORT);
     
@@ -223,20 +223,12 @@ accept_incoming(void)
 static void
 handle_client(void)
 {
-    char *cmd;
+    char cmd[CMD_MSGLEN] = "";
     
     authenticate_or_die();
-    
-    cmd = malloc(CMD_MSGLEN);
-    if (cmd == NULL) {
-        perror("[FATAL] malloc()");
-        exit(EXIT_FAILURE);
-    }
-
     for(;;) {
         memset(cmd, 0, CMD_MSGLEN);
         bel_recvall_or_die(sockfd_acc, cmd, CMD_MSGLEN);
-        printf("[TRACE] cmd = '%s'\n", cmd);
         if (strcmp(cmd, CMD_READ) == 0) {
             handle_read();
         } else if (strcmp(cmd, CMD_SEND) == 0) {
@@ -304,15 +296,9 @@ static void
 handle_send(void)
 {
     FILE *db = NULL;
-    char* subject;
-    char* body;
+    char subject[STD_MSGLEN] = "";
+    char body[STD_MSGLEN] = "";
 
-    subject = calloc(STD_MSGLEN, 1);
-    body    = calloc(STD_MSGLEN, 1);
-    if (subject == NULL || body == NULL) {
-        perror("[FATAL] calloc()");
-        exit(EXIT_FAILURE);
-    }
     bel_recvall_or_die(sockfd_acc, subject, STD_MSGLEN);
     bel_recvall_or_die(sockfd_acc, body, STD_MSGLEN);
 
@@ -321,9 +307,6 @@ handle_send(void)
             current_user, subject, body);
     fprintf(db, "%s\n%s\n%s\n\n", current_user, subject, body);
     do_fclose_or_die(db);
-    
-    free(subject);
-    free(body);
     
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }
