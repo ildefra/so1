@@ -7,8 +7,8 @@
  * connection and abort the process assigned to it
  */
 
+#include "io_fileutil.h"
 #include "bel_common.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -48,10 +48,6 @@ static Action receive_client_command(void);
 static void handle_read(void);
 static void handle_send(void);
 static void handle_delete(void);
-
-static FILE* fopen_or_die(const char* const, const char* const);
-static void fclose_or_die(FILE*);
-static long filesize_or_die(FILE*);
 
 
 /*
@@ -111,7 +107,7 @@ bind_to_port(const u_short port)
     int do_bind_res;
     struct addrinfo *servinfo = NULL, *currinfo = NULL;
 
-    bel_getaddrinfo_or_die(NULL, AF_UNSPEC, port, &servinfo);
+    bel_getaddrinfo_or_die(NULL, AF_INET, port, &servinfo);
     for(currinfo = servinfo; currinfo != NULL; currinfo = currinfo->ai_next) {
         do_bind_res = do_bind(currinfo);
         if (do_bind_res != -1) break;
@@ -314,15 +310,15 @@ handle_read(void)
     long filesize;
     char* buf = NULL;
     
-    db = fopen_or_die(DB_FILENAME, "rb");
-    filesize = filesize_or_die(db);
+    db = io_fopen_or_die(DB_FILENAME, "rb");
+    filesize = io_filesize_or_die(db);
     buf = malloc(filesize);
     if (buf == NULL) {
         perror("[ERROR] malloc()");
         exit(EXIT_FAILURE);
     }
     fread(buf, 1, filesize, db);
-    fclose_or_die(db);
+    io_fclose_or_die(db);
     bel_sendall_or_die(sockfd_acc, buf, STD_MSGLEN);
     free(buf);
 }
@@ -338,11 +334,11 @@ handle_send(void)
     bel_recvall_or_die(sockfd_acc, subject, STD_MSGLEN);
     bel_recvall_or_die(sockfd_acc, body, STD_MSGLEN);
 
-    db = fopen_or_die(DB_FILENAME, "ab");
+    db = io_fopen_or_die(DB_FILENAME, "ab");
     printf("[TRACE] current_user = '%s', subject = '%s', body='%s'\n",
             current_user, subject, body);
     fprintf(db, "%s\n%s\n%s\n\n", current_user, subject, body);
-    fclose_or_die(db);
+    io_fclose_or_die(db);
     
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }
@@ -353,51 +349,9 @@ handle_delete(void)
 {
     FILE *db;
     
-    db = fopen_or_die(DB_FILENAME, "w+");
+    db = io_fopen_or_die(DB_FILENAME, "w+");
     
     
-    fclose_or_die(db);
+    io_fclose_or_die(db);
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
-}
-
-
-static FILE*
-fopen_or_die(const char* const filename, const char* const mode)
-{
-    FILE *fp;
-    
-    fp = fopen(filename, mode);
-    if (fp == NULL) {
-        perror("[ERROR] fopen()");
-        exit(EXIT_FAILURE);
-    }
-    return fp;
-}
-
-static void
-fclose_or_die(FILE* fp)
-{
-    int fclose_res;
-    
-    fclose_res = fclose(fp);
-    if (fclose_res == EOF) {
-        perror("[ERROR] fclose()");
-        exit(EXIT_FAILURE);
-    }
-}
-
-static long
-filesize_or_die(FILE* fp)
-{
-    int fseek_res;
-    long filesize;
-    
-    fseek_res = fseek(fp, 0L, SEEK_END);
-    if (fseek_res == -1) {
-        perror("[ERROR] fseek()");
-        exit(EXIT_FAILURE);
-    }
-    filesize = ftell(fp);
-    rewind(fp);
-    return filesize;
 }
