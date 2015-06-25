@@ -20,8 +20,6 @@
 #define NO_OF_MENUITEMS 4
 
 
-typedef void (*Action)();
-
 typedef struct {
     
     /* 
@@ -178,8 +176,6 @@ run_client(void)
             reset_stdin();
         } else {
             menu_action();
-            printf("Server returned %s\n",
-                    ok_from_server() ? ANSWER_OK : ANSWER_KO);
         }
     }
 }
@@ -232,7 +228,10 @@ read_all_messages(void)
     
     printf("[TRACE] inside read_all_messages\n");
     bel_sendall_or_die(sockfd, CMD_READ, CMD_MSGLEN);
-    
+    if(!ok_from_server()) {
+        printf("KO answer from server: cannot read");
+        return;
+    }    
     bel_recvall_or_die(sockfd, all_messages, STD_MSGLEN);
     printf("%s", all_messages);
 }
@@ -242,9 +241,13 @@ send_new_message(void)
 {
     printf("[TRACE] inside send_new_message\n");
     bel_sendall_or_die(sockfd, CMD_SEND, CMD_MSGLEN);
-
+    if(!ok_from_server()) {
+        printf("KO answer from server: cannot send");
+        return;
+    }
     send_user_input_to_server("Subject", STD_MSGLEN);
     send_user_input_to_server("Body", STD_MSGLEN);
+    printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
 }
 
 static void
@@ -254,11 +257,15 @@ delete_message(void)
     
     printf("[TRACE] inside delete_message\n");
     bel_sendall_or_die(sockfd, CMD_DELETE, CMD_MSGLEN);
-    
+    if(!ok_from_server()) {
+        printf("KO answer from server: cannot delete");
+        return;
+    }    
     printf("Here are your messages:\n");
     bel_recvall_or_die(sockfd, my_messages, STD_MSGLEN);
     printf("%s", my_messages);
     send_user_input_to_server("Enter the message to delete", STD_MSGLEN);
+    printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
 }
 
 static void

@@ -17,6 +17,8 @@
 /* Number of (hardcoded) registered users in the system  */
 #define NO_OF_USERS 3
 
+#define NO_OF_COMMANDS 3
+
 #define DB_FILENAME "db.txt"
 
 
@@ -24,6 +26,11 @@ typedef struct {
     char uname[UNAME_MSGLEN];
     char pword[PWORD_MSGLEN];
 } Credentials;
+
+typedef struct {
+    char name[CMD_MSGLEN];
+    Action action;
+} Command;
 
 
 static void bind_to_port(u_short);
@@ -37,6 +44,7 @@ static void handle_client(void);
 static void authenticate_or_die(void);
 static int is_valid_login(const Credentials);
 
+static Action receive_client_command(void);
 static void handle_read(void);
 static void handle_send(void);
 static void handle_delete(void);
@@ -223,20 +231,16 @@ accept_incoming(void)
 static void
 handle_client(void)
 {
-    char cmd[CMD_MSGLEN] = "";
+    Action command;
     
     authenticate_or_die();
     for(;;) {
-        memset(cmd, 0, CMD_MSGLEN);
-        bel_recvall_or_die(sockfd_acc, cmd, CMD_MSGLEN);
-        if (strcmp(cmd, CMD_READ) == 0) {
-            handle_read();
-        } else if (strcmp(cmd, CMD_SEND) == 0) {
-            handle_send();
-        } else if (strcmp(cmd, CMD_DELETE) == 0) {
-            handle_delete();
+        command = receive_client_command();
+        if (command == NULL) {
+            bel_sendall_or_die(sockfd_acc, ANSWER_KO, ANSWER_MSGLEN);
         } else {
-            printf("[WARN] unrecognized message '%s'\n", cmd);
+            bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+            command();
         }
     }
 }
@@ -278,6 +282,27 @@ is_valid_login(const Credentials login)
         if(uname_matches && pword_matches) return 1;    /* true  */
     }
     return 0;   /* false  */
+}
+
+
+/* Listens for a command from the client and returns the matching Action  */
+static Action
+receive_client_command(void)
+{
+    int i;
+    char cmd[CMD_MSGLEN] = "";
+    const Command commands[NO_OF_COMMANDS] = {
+            {CMD_READ,      handle_read},
+            {CMD_SEND,      handle_send},
+            {CMD_DELETE,    handle_delete}
+            };
+    
+    bel_recvall_or_die(sockfd_acc, cmd, CMD_MSGLEN);
+    for(i = 0; i < NO_OF_COMMANDS; ++i) {
+        if (strcmp(cmd, commands[i].name) == 0) return commands[i].action;
+    }
+    printf("[WARN] unrecognized message '%s'\n", cmd);
+    return NULL;
 }
 
 

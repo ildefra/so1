@@ -25,6 +25,10 @@
 
 #define STD_MSGLEN 1024
 
+
+typedef void (*Action)();
+
+
 /*
  * Closes the given file (a socket is a file). Does nothing on invalid
  * descriptors. Exits on error
