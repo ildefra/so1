@@ -49,8 +49,9 @@ static void handle_read(void);
 static void handle_send(void);
 static void handle_delete(void);
 
-static FILE* open_db_or_die(const char* const);
-static void do_fclose_or_die(FILE*);
+static FILE* fopen_or_die(const char* const, const char* const);
+static void fclose_or_die(FILE*);
+static long filesize_or_die(FILE*);
 
 
 /*
@@ -310,10 +311,20 @@ static void
 handle_read(void)
 {
     FILE *db;
+    long filesize;
+    char* buf = NULL;
     
-    db = open_db_or_die("r");
-    do_fclose_or_die(db);
-    bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+    db = fopen_or_die(DB_FILENAME, "rb");
+    filesize = filesize_or_die(db);
+    buf = malloc(filesize);
+    if (buf == NULL) {
+        perror("[ERROR] malloc()");
+        exit(EXIT_FAILURE);
+    }
+    fread(buf, 1, filesize, db);
+    fclose_or_die(db);
+    bel_sendall_or_die(sockfd_acc, buf, STD_MSGLEN);
+    free(buf);
 }
 
 
@@ -327,38 +338,13 @@ handle_send(void)
     bel_recvall_or_die(sockfd_acc, subject, STD_MSGLEN);
     bel_recvall_or_die(sockfd_acc, body, STD_MSGLEN);
 
-    db = open_db_or_die("a");
+    db = fopen_or_die(DB_FILENAME, "ab");
     printf("[TRACE] current_user = '%s', subject = '%s', body='%s'\n",
             current_user, subject, body);
     fprintf(db, "%s\n%s\n%s\n\n", current_user, subject, body);
-    do_fclose_or_die(db);
+    fclose_or_die(db);
     
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
-}
-
-static FILE*
-open_db_or_die(const char* const flags)
-{
-    FILE *db;
-    
-    db = fopen(DB_FILENAME, flags);
-    if (db == NULL) {
-        perror("[ERROR] fopen()");
-        exit(EXIT_FAILURE);
-    }
-    return db;
-}
-
-static void
-do_fclose_or_die(FILE* db)
-{
-    int fclose_res;
-    
-    fclose_res = fclose(db);
-    if (fclose_res == EOF) {
-        perror("[ERROR] fclose()");
-        exit(EXIT_FAILURE);
-    }
 }
 
 
@@ -367,7 +353,51 @@ handle_delete(void)
 {
     FILE *db;
     
-    db = open_db_or_die("w+");
-    do_fclose_or_die(db);
+    db = fopen_or_die(DB_FILENAME, "w+");
+    
+    
+    fclose_or_die(db);
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+}
+
+
+static FILE*
+fopen_or_die(const char* const filename, const char* const mode)
+{
+    FILE *fd;
+    
+    fd = fopen(filename, mode);
+    if (fd == NULL) {
+        perror("[ERROR] fopen()");
+        exit(EXIT_FAILURE);
+    }
+    return fd;
+}
+
+static void
+fclose_or_die(FILE* fd)
+{
+    int fclose_res;
+    
+    fclose_res = fclose(fd);
+    if (fclose_res == EOF) {
+        perror("[ERROR] fclose()");
+        exit(EXIT_FAILURE);
+    }
+}
+
+static long
+filesize_or_die(FILE* fd)
+{
+    int fseek_res;
+    long filesize;
+    
+    fseek_res = fseek(fd, 0L, SEEK_END);
+    if (fseek_res == -1) {
+        perror("[ERROR] fseek()");
+        exit(EXIT_FAILURE);
+    }
+    filesize = ftell(fd);
+    rewind(fd);
+    return filesize;
 }
