@@ -364,22 +364,22 @@ handle_delete(void)
 static FILE*
 fopen_or_die(const char* const filename, const char* const mode)
 {
-    FILE *fd;
+    FILE *fp;
     
-    fd = fopen(filename, mode);
-    if (fd == NULL) {
+    fp = fopen(filename, mode);
+    if (fp == NULL) {
         perror("[ERROR] fopen()");
         exit(EXIT_FAILURE);
     }
-    return fd;
+    return fp;
 }
 
 static void
-fclose_or_die(FILE* fd)
+fclose_or_die(FILE* fp)
 {
     int fclose_res;
     
-    fclose_res = fclose(fd);
+    fclose_res = fclose(fp);
     if (fclose_res == EOF) {
         perror("[ERROR] fclose()");
         exit(EXIT_FAILURE);
@@ -387,17 +387,17 @@ fclose_or_die(FILE* fd)
 }
 
 static long
-filesize_or_die(FILE* fd)
+filesize_or_die(FILE* fp)
 {
     int fseek_res;
     long filesize;
     
-    fseek_res = fseek(fd, 0L, SEEK_END);
+    fseek_res = fseek(fp, 0L, SEEK_END);
     if (fseek_res == -1) {
         perror("[ERROR] fseek()");
         exit(EXIT_FAILURE);
     }
-    filesize = ftell(fd);
-    rewind(fd);
+    filesize = ftell(fp);
+    rewind(fp);
     return filesize;
 }
