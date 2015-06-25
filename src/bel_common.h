@@ -19,11 +19,15 @@
 #define CMD_SEND	"SEND"
 #define CMD_DELETE	"DELETE"
 
+#define ID_MSGLEN 7
+
 #define ANSWER_MSGLEN 3
 #define ANSWER_OK "OK"
 #define ANSWER_KO "KO"
 
-#define STD_MSGLEN 1024
+#define TXT_MSGLEN 256
+
+#define MAX_NO_OF_MSGS 127
 
 
 typedef void (*Action)();
@@ -79,5 +83,10 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len);
  */
 extern char*
 bel_concat(const char* const, const char* const);
+
+
+/* Removes the last character of the given string if it is a newline  */
+extern void
+bel_chop_newline(char*);
 
 #endif	/* BELCOMMON_H_INCLUDED */

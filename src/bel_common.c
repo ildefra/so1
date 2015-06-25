@@ -243,3 +243,13 @@ bel_concat(const char* const s1, const char* const s2)
     
     return result;
 }
+
+
+void
+bel_chop_newline(char *str)
+{
+    size_t len;
+    
+    len = strlen(str);
+    if (len > 0 && str[len-1] == '\n') str[len-1] = '\0';
+}

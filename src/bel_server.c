@@ -303,24 +303,19 @@ receive_client_command(void)
 }
 
 
+/* TODO: better error handling?  */
 static void
 handle_read(void)
 {
     FILE *db;
     long filesize;
-    char* buf = NULL;
+    char buf[TXT_MSGLEN * MAX_NO_OF_MSGS] = "";
     
     db = io_fopen_or_die(DB_FILENAME, "rb");
     filesize = io_filesize_or_die(db);
-    buf = malloc(filesize);
-    if (buf == NULL) {
-        perror("[ERROR] malloc()");
-        exit(EXIT_FAILURE);
-    }
     fread(buf, 1, filesize, db);
     io_fclose_or_die(db);
-    bel_sendall_or_die(sockfd_acc, buf, STD_MSGLEN);
-    free(buf);
+    bel_sendall_or_die(sockfd_acc, buf, TXT_MSGLEN * MAX_NO_OF_MSGS);
 }
 
 
@@ -328,11 +323,11 @@ static void
 handle_send(void)
 {
     FILE *db = NULL;
-    char subject[STD_MSGLEN] = "";
-    char body[STD_MSGLEN] = "";
+    char subject[TXT_MSGLEN] = "";
+    char body[TXT_MSGLEN] = "";
 
-    bel_recvall_or_die(sockfd_acc, subject, STD_MSGLEN);
-    bel_recvall_or_die(sockfd_acc, body, STD_MSGLEN);
+    bel_recvall_or_die(sockfd_acc, subject, TXT_MSGLEN);
+    bel_recvall_or_die(sockfd_acc, body, TXT_MSGLEN);
 
     db = io_fopen_or_die(DB_FILENAME, "ab");
     printf("[TRACE] current_user = '%s', subject = '%s', body='%s'\n",
@@ -348,9 +343,34 @@ static void
 handle_delete(void)
 {
     FILE *db;
+    long filesize;
+    char buf[TXT_MSGLEN * MAX_NO_OF_MSGS] = "";
+    char user[UNAME_MSGLEN + 1] = "";   /* +1 for \n  */
+    char msg_id[ID_MSGLEN] = "";
     
     db = io_fopen_or_die(DB_FILENAME, "w+");
     
+    
+    /* NON-FILTERING TEMPORARY CODE */
+    filesize = io_filesize_or_die(db);
+    fread(buf, 1, filesize, db);
+    
+    
+    printf("[TRACE] current_user = '%s', user = '%s'", current_user, user);
+    while (fgets(user, UNAME_MSGLEN + 1, db) != NULL) {
+        bel_chop_newline(user);
+        printf("[TRACE] current_user = '%s', user = '%s'", current_user, user);
+        if (strcmp(current_user, user) == 0) {
+            /* good data: read */
+        } else {
+            /* skip the data */
+        }
+    }
+    
+    bel_sendall_or_die(sockfd_acc, buf, TXT_MSGLEN * MAX_NO_OF_MSGS);
+    bel_recvall_or_die(sockfd_acc, msg_id, ID_MSGLEN);
+    
+    /* delete on file */
     
     io_fclose_or_die(db);
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);

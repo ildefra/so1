@@ -53,7 +53,6 @@ static void user_quit(void);
 
 static int ok_from_server(void);
 static void send_user_input_to_server(const char* const, const int);
-static void chop_newline(char*);
 
 
 const MenuItem menu[NO_OF_MENUITEMS] = {
@@ -202,7 +201,7 @@ read_action_from_user(void)
     char input_buf[MENU_NAME_MAXLEN + 1] = "";  /* +1 for \n  */
 
     printf("\nEnter a command: ");
-    chop_newline(fgets(input_buf, sizeof(input_buf), stdin));
+    bel_chop_newline(fgets(input_buf, sizeof(input_buf), stdin));
     for(i = 0; i < NO_OF_MENUITEMS; ++i) {
         if (strcmp(input_buf, menu[i].name) == 0) return menu[i].action;
     }
@@ -224,7 +223,7 @@ reset_stdin(void)
 static void
 read_all_messages(void)
 {
-    char all_messages[STD_MSGLEN] = "";
+    char all_messages[TXT_MSGLEN * MAX_NO_OF_MSGS] = "";
     
     printf("[TRACE] inside read_all_messages\n");
     bel_sendall_or_die(sockfd, CMD_READ, CMD_MSGLEN);
@@ -232,7 +231,7 @@ read_all_messages(void)
         printf("KO answer from server: cannot read");
         return;
     }    
-    bel_recvall_or_die(sockfd, all_messages, STD_MSGLEN);
+    bel_recvall_or_die(sockfd, all_messages, TXT_MSGLEN * MAX_NO_OF_MSGS);
     printf("%s", all_messages);
 }
 
@@ -245,15 +244,15 @@ send_new_message(void)
         printf("KO answer from server: cannot send");
         return;
     }
-    send_user_input_to_server("Subject", STD_MSGLEN);
-    send_user_input_to_server("Body", STD_MSGLEN);
+    send_user_input_to_server("Subject", TXT_MSGLEN);
+    send_user_input_to_server("Body", TXT_MSGLEN);
     printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
 }
 
 static void
 delete_message(void)
 {
-    char my_messages[STD_MSGLEN] = "";
+    char my_messages[TXT_MSGLEN * MAX_NO_OF_MSGS] = "";
     
     printf("[TRACE] inside delete_message\n");
     bel_sendall_or_die(sockfd, CMD_DELETE, CMD_MSGLEN);
@@ -262,9 +261,9 @@ delete_message(void)
         return;
     }    
     printf("Here are your messages:\n");
-    bel_recvall_or_die(sockfd, my_messages, STD_MSGLEN);
+    bel_recvall_or_die(sockfd, my_messages, TXT_MSGLEN * MAX_NO_OF_MSGS);
     printf("%s", my_messages);
-    send_user_input_to_server("Enter the message to delete", STD_MSGLEN);
+    send_user_input_to_server("Enter the message to delete", ID_MSGLEN);
     printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
 }
 
@@ -311,18 +310,7 @@ send_user_input_to_server(const char* const prompt_msg, const int buf_len)
         perror("[FATAL] calloc()");
         exit(EXIT_FAILURE);
     }
-    chop_newline(fgets(input_buf, buf_len + 1, stdin));
+    bel_chop_newline(fgets(input_buf, buf_len + 1, stdin));
     bel_sendall_or_die(sockfd, input_buf, buf_len);
     free(input_buf);
-}
-
-
-/* Removes the last character of the given string if it is a newline  */
-static void
-chop_newline(char *str)
-{
-    size_t len;
-    
-    len = strlen(str);
-    if (len > 0 && str[len-1] == '\n') str[len-1] = '\0';
 }
