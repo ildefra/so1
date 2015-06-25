@@ -110,7 +110,7 @@ connect_to(const char* const ip, const u_short port)
     int do_connect_res;
     struct addrinfo *servinfo = NULL, *currinfo = NULL;
     
-    bel_getaddrinfo_or_die(ip, port, &servinfo);
+    bel_getaddrinfo_or_die(ip, AF_UNSPEC, port, &servinfo);
     for(currinfo = servinfo; currinfo != NULL; currinfo = currinfo->ai_next) {
         do_connect_res = do_connect(currinfo);
         if (do_connect_res != -1) break;

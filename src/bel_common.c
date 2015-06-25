@@ -12,7 +12,7 @@
 #define PORT_MAXCHARS 5
 
 
-static struct addrinfo make_hints(void);
+static struct addrinfo make_hints(const int);
 
 static void* get_inaddr(const struct sockaddr*);
 static const char* afamily_tostring(const int);
@@ -51,7 +51,8 @@ bel_new_sock(const struct addrinfo ainfo)
 
 void
 bel_getaddrinfo_or_die(
-        const char* const ip, const u_short port, struct addrinfo **servinfo)
+        const char* const ip, const int protocol, const u_short port,
+        struct addrinfo **servinfo)
 {
     char port_str[PORT_MAXCHARS] = "";
     struct addrinfo hints;
@@ -60,7 +61,7 @@ bel_getaddrinfo_or_die(
     
     printf("[TRACE] inside bel_getaddrinfo_or_die\n");
     sprintf(port_str, "%d", port);
-    hints = make_hints();
+    hints = make_hints(protocol);
     if (ip == NULL) hints.ai_flags = AI_PASSIVE;
     getaddrinfo_res = getaddrinfo(ip, port_str, &hints, servinfo);
     if (getaddrinfo_res != 0) {
@@ -70,12 +71,12 @@ bel_getaddrinfo_or_die(
 }
 
 static struct addrinfo
-make_hints(void)
+make_hints(const int protocol)
 {
     struct addrinfo hints;
     
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family     = AF_INET;
+    hints.ai_family     = protocol;
     hints.ai_socktype   = SOCK_STREAM;
     
     return hints;

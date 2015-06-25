@@ -38,10 +38,12 @@ extern int bel_new_sock(const struct addrinfo);
 
 /*
  * Fills servinfo with the list of internet addresses associated with the given
- * ip and port. Exits program on error
+ * ip, protocol and port. Accepted values for protocol are AF_INET (ipv4),
+ * AF_INET6 (ipv6) and AF_UNSPEC (both).
+ * Exits program on error
  */
 extern void bel_getaddrinfo_or_die(
-		const char* const, const u_short, struct addrinfo**);
+		const char* const, const int, const u_short, struct addrinfo**);
 
 /*
  * Prints a string representation of the given socket address, prepending the

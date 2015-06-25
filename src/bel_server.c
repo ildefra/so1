@@ -102,7 +102,7 @@ bind_to_port(const u_short port)
     int do_bind_res;
     struct addrinfo *servinfo = NULL, *currinfo = NULL;
 
-    bel_getaddrinfo_or_die(NULL, port, &servinfo);
+    bel_getaddrinfo_or_die(NULL, AF_UNSPEC, port, &servinfo);
     for(currinfo = servinfo; currinfo != NULL; currinfo = currinfo->ai_next) {
         do_bind_res = do_bind(currinfo);
         if (do_bind_res != -1) break;
