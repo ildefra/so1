@@ -7,7 +7,7 @@
  * connection and abort the process assigned to it
  */
 
-#include "io_fileutil.h"
+#include "msg_storage.h"
 #include "bel_common.h"
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +19,8 @@
 
 #define NO_OF_COMMANDS 3
 
-#define DB_FILENAME "db.txt"
+/* How many messages can be read at once  */
+#define MSG_LIST_SIZE 10
 
 
 typedef struct {
@@ -48,6 +49,7 @@ static Action receive_client_command(void);
 static void handle_read(void);
 static void handle_send(void);
 static void handle_delete(void);
+static void send_filtered_message_list(void);
 
 
 /*
@@ -303,75 +305,68 @@ receive_client_command(void)
 }
 
 
-/* TODO: better error handling?  */
 static void
 handle_read(void)
 {
-    FILE *db;
-    long filesize;
-    char buf[TXT_MSGLEN * MAX_NO_OF_MSGS] = "";
+    int i, msgcount, buf_idx;
+    Message messages[MSG_LIST_SIZE];
+    char msgbuf[MSG_TOSTRING_SIZE];
+    char listbuf[MSG_TOSTRING_SIZE * MSG_LIST_SIZE] = "";
     
-    db = io_fopen_or_die(DB_FILENAME, "rb");
-    filesize = io_filesize_or_die(db);
-    fread(buf, 1, filesize, db);
-    io_fclose_or_die(db);
-    bel_sendall_or_die(sockfd_acc, buf, TXT_MSGLEN * MAX_NO_OF_MSGS);
+    msgcount = msg_retrieve_some(messages, MSG_LIST_SIZE);
+    for (i = 0; i < msgcount; ++i) {
+        memset(msgbuf, 0, MSG_TOSTRING_SIZE);
+        msg_tostring(messages[i], msgbuf);
+        buf_idx += sprintf(listbuf + buf_idx, "%s", msgbuf);
+    }
+    bel_sendall_or_die(sockfd_acc, listbuf, LIST_MSGLEN);
 }
 
 
 static void
 handle_send(void)
 {
-    FILE *db = NULL;
-    char subject[TXT_MSGLEN] = "";
-    char body[TXT_MSGLEN] = "";
-
-    bel_recvall_or_die(sockfd_acc, subject, TXT_MSGLEN);
-    bel_recvall_or_die(sockfd_acc, body, TXT_MSGLEN);
-
-    db = io_fopen_or_die(DB_FILENAME, "ab");
-    printf("[TRACE] current_user = '%s', subject = '%s', body='%s'\n",
-            current_user, subject, body);
-    fprintf(db, "%s\n%s\n%s\n\n", current_user, subject, body);
-    io_fclose_or_die(db);
+    Message msg;
     
+    memset(&msg, 0, sizeof(msg));
+    strcpy(msg.from, current_user);
+    bel_recvall_or_die(sockfd_acc, msg.subject, TXT_MSGLEN);
+    bel_recvall_or_die(sockfd_acc, msg.body,    TXT_MSGLEN);
+    
+    msg_trace(msg);
+    msg_store(msg);
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
 }
+
 
 
 static void
 handle_delete(void)
 {
-    FILE *db;
-    long filesize;
-    char buf[TXT_MSGLEN * MAX_NO_OF_MSGS] = "";
-    char user[UNAME_MSGLEN + 1] = "";   /* +1 for \n  */
     char msg_id[ID_MSGLEN] = "";
     
-    db = io_fopen_or_die(DB_FILENAME, "w+");
-    
-    
-    /* NON-FILTERING TEMPORARY CODE */
-    filesize = io_filesize_or_die(db);
-    fread(buf, 1, filesize, db);
-    
-    
-    printf("[TRACE] current_user = '%s', user = '%s'", current_user, user);
-    while (fgets(user, UNAME_MSGLEN + 1, db) != NULL) {
-        bel_chop_newline(user);
-        printf("[TRACE] current_user = '%s', user = '%s'", current_user, user);
-        if (strcmp(current_user, user) == 0) {
-            /* good data: read */
-        } else {
-            /* skip the data */
-        }
-    }
-    
-    bel_sendall_or_die(sockfd_acc, buf, TXT_MSGLEN * MAX_NO_OF_MSGS);
+    send_filtered_message_list();
     bel_recvall_or_die(sockfd_acc, msg_id, ID_MSGLEN);
     
     /* delete on file */
     
-    io_fclose_or_die(db);
     bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+}
+
+/* TODO: SPLIT!  */
+static void
+send_filtered_message_list(void)
+{
+    int msgcount;
+    Message messages[MSG_LIST_SIZE];
+    char listbuf[MSG_TOSTRING_SIZE * MSG_LIST_SIZE] = "";
+    
+    msgcount = msg_retrieve_some(messages, MSG_LIST_SIZE);
+    
+    /* filter messages this way
+    if (strcmp(current_user, user) == 0) {
+    }
+    */
+    
+    bel_sendall_or_die(sockfd_acc, listbuf, LIST_MSGLEN);
 }

@@ -6,6 +6,7 @@
 
 #define COMM_PORT 7477
 
+
 /*
  * Message lengths for client-server communication. Last byte will always be
  * the string terminator '\0', so the actual payload is always one byte shorter
@@ -27,7 +28,11 @@
 
 #define TXT_MSGLEN 256
 
-#define MAX_NO_OF_MSGS 127
+/*
+ * This one must be big enough to contain the full message list, so we set it
+ * to over nine thousand
+ */
+#define LIST_MSGLEN 9001
 
 
 typedef void (*Action)();

@@ -223,7 +223,7 @@ reset_stdin(void)
 static void
 read_all_messages(void)
 {
-    char all_messages[TXT_MSGLEN * MAX_NO_OF_MSGS] = "";
+    char all_messages[LIST_MSGLEN] = "";
     
     printf("[TRACE] inside read_all_messages\n");
     bel_sendall_or_die(sockfd, CMD_READ, CMD_MSGLEN);
@@ -231,7 +231,7 @@ read_all_messages(void)
         printf("KO answer from server: cannot read");
         return;
     }    
-    bel_recvall_or_die(sockfd, all_messages, TXT_MSGLEN * MAX_NO_OF_MSGS);
+    bel_recvall_or_die(sockfd, all_messages, LIST_MSGLEN);
     printf("%s", all_messages);
 }
 
@@ -252,7 +252,7 @@ send_new_message(void)
 static void
 delete_message(void)
 {
-    char my_messages[TXT_MSGLEN * MAX_NO_OF_MSGS] = "";
+    char my_messages[LIST_MSGLEN] = "";
     
     printf("[TRACE] inside delete_message\n");
     bel_sendall_or_die(sockfd, CMD_DELETE, CMD_MSGLEN);
@@ -261,7 +261,7 @@ delete_message(void)
         return;
     }    
     printf("Here are your messages:\n");
-    bel_recvall_or_die(sockfd, my_messages, TXT_MSGLEN * MAX_NO_OF_MSGS);
+    bel_recvall_or_die(sockfd, my_messages, LIST_MSGLEN);
     printf("%s", my_messages);
     send_user_input_to_server("Enter the message to delete", ID_MSGLEN);
     printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);

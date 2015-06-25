@@ -1,10 +1,32 @@
-#ifndef IOFILEUTIL_H_INCLUDED
-#define IOFILEUTIL_H_INCLUDED
+#ifndef MSGSTORAGE_H_INCLUDED
+#define MSGSTORAGE_H_INCLUDED
 
 #include <stdio.h>
 
-FILE* io_fopen_or_die(const char* const, const char* const);
-void io_fclose_or_die(FILE*);
-long io_filesize_or_die(FILE*);
+#define FROM_MAXLEN 32
+#define TXT_MAXLEN 256
+#define MSG_TOSTRING_SIZE FROM_MAXLEN + TXT_MAXLEN * 2
 
-#endif	/* IOFILEUTIL_H_INCLUDED */
+typedef struct {
+    char from[FROM_MAXLEN];
+    char subject[TXT_MAXLEN];
+    char body[TXT_MAXLEN];
+} Message;
+
+
+/* Prints the given message (for debugging purposes)  */
+extern void msg_trace(const Message msg);
+
+extern void msg_tostring(const Message, char[MSG_TOSTRING_SIZE]);
+
+/* Stores <msg> in the last position of the database  */
+extern void msg_store(const Message msg);
+
+/*
+ * Fills <buf> with the first Messages from the database, filling in at most
+ * <count> items.
+ * Returns the number of filled items
+ */
+extern int msg_retrieve_some(Message* buf, const int count);
+
+#endif	/* MSGSTORAGE_H_INCLUDED */
