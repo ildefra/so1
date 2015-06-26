@@ -7,7 +7,7 @@
 #define MSG_MAX_STORAGE 16
 
 #define FROM_MAXLEN 32
-#define TXT_MAXLEN 256
+#define TXT_MAXLEN 128
 #define MSG_TOSTRING_SIZE FROM_MAXLEN + TXT_MAXLEN * 2
 
 typedef struct {

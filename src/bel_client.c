@@ -44,7 +44,6 @@ static void authenticate(void);
 static void run_client(void);
 static void show_menu(void);
 static Action read_action_from_user(void);
-static void reset_stdin(void);
 
 static void read_all_messages(void);
 static void send_new_message(void);
@@ -53,6 +52,7 @@ static void user_quit(void);
 
 static int ok_from_server(void);
 static void send_user_input_to_server(const char* const, const int);
+static void reset_stdin(void);
 
 
 const MenuItem menu[NO_OF_MENUITEMS] = {
@@ -208,17 +208,6 @@ read_action_from_user(void)
     return NULL;
 }
 
-/* Discards all the characters still pending in the stdin buffer  */
-static void
-reset_stdin(void)
-{
-    int c;
-    
-    do {
-        c = getchar();
-    } while(c != '\n' && c != EOF);
-}
-
 
 static void
 read_all_messages(void)
@@ -313,6 +302,15 @@ send_user_input_to_server(const char* const prompt_msg, const int buf_len)
         exit(EXIT_FAILURE);
     }
     bel_chop_newline(fgets(input_buf, buf_len + 1, stdin));
+    reset_stdin();
     bel_sendall_or_die(sockfd, input_buf, buf_len);
     free(input_buf);
+}
+
+
+/* Discards all the characters still pending in the stdin buffer  */
+static void
+reset_stdin(void)
+{
+    fseek(stdin, 0, SEEK_END);
 }

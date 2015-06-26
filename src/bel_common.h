@@ -26,7 +26,7 @@
 #define ANSWER_OK "OK"
 #define ANSWER_KO "KO"
 
-#define TXT_MSGLEN 256
+#define TXT_MSGLEN 128
 
 /*
  * This one must be big enough to contain the full message list, so we set it

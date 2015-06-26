@@ -7,13 +7,18 @@
 #include <string.h>
 
 #define NO_OF_MSG_FIELDS 3
+#define MSG_PATHMAX 4096
 
-
+static char db_filepath[MSG_PATHMAX];
 static FILE* db;
 
 
 static void close_db(void);
+static void truncate_db(void);
+
 static Message* retrieve_one_or_die(void);
+
+static FILE* fopen_or_die(const char* const file_path, const char* const mode);
 
 
 void
@@ -44,11 +49,8 @@ msg_arraytostring(const Message* msg, const int array_size, char *buf)
 void
 msg_init_db_or_die(const char* const file_path)
 {
-    db = fopen(file_path, "ab+");
-    if (db == NULL) {
-        perror("[ERROR] fopen()");
-        exit(EXIT_FAILURE);
-    }
+    strcpy(db_filepath, file_path);
+    db = fopen_or_die(db_filepath, "ab+");
     atexit(close_db);
 }
 
@@ -62,6 +64,15 @@ close_db(void)
         perror("[ERROR] fclose()");
         exit(EXIT_FAILURE);
     }    
+}
+
+static void
+truncate_db(void)
+{
+    close_db();
+    db = fopen_or_die(db_filepath, "wb");
+    close_db();
+    db = fopen_or_die(db_filepath, "ab+");
 }
 
 
@@ -119,13 +130,26 @@ msg_delete(const int msgid)
     Message messages[MSG_MAX_STORAGE];
     char listbuf[MSG_TOSTRING_SIZE * MSG_MAX_STORAGE] = "";
     
-    printf("[TRACE] msg_delete - msgid = '%d'\n", msgid);    
+    printf("[TRACE] msg_delete - msgid = '%d'\n", msgid);
     msgcount = msg_retrieve_some(messages, MSG_MAX_STORAGE);
     for(i = msgid - 1; i < msgcount - 1; ++i) messages[i] = messages[i + 1];
-    msg_arraytostring(messages, msgcount, listbuf);
-
-    /* truncate file */
-    
+    msg_arraytostring(messages, msgcount - 1, listbuf);
+    printf("[TRACE] msgcount = '%d', listbuf = '%s'\n", msgcount, listbuf);
+    truncate_db();
     fseek(db, 0L, SEEK_SET);
     fprintf(db, "%s", listbuf);
+}
+
+
+static FILE*
+fopen_or_die(const char* const file_path, const char* const mode)
+{
+    FILE* fp;
+    
+    fp = fopen(file_path, mode);
+    if (fp == NULL) {
+        perror("[ERROR] fopen()");
+        exit(EXIT_FAILURE);
+    }
+    return fp;
 }
