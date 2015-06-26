@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 
+/* Maximum number of messages that can be stored in the database  */
+#define MSG_MAX_STORAGE 16
+
 #define FROM_MAXLEN 32
 #define TXT_MAXLEN 256
 #define MSG_TOSTRING_SIZE FROM_MAXLEN + TXT_MAXLEN * 2
@@ -40,6 +43,7 @@ extern void msg_store(const Message msg);
  */
 extern int msg_retrieve_some(Message* buf, const int count);
 
+/* Deletes the nth message from the database  */
 extern void msg_delete(const int);
 
 #endif	/* MSGSTORAGE_H_INCLUDED */

@@ -115,8 +115,17 @@ retrieve_one_or_die(void)
 void
 msg_delete(const int msgid)
 {
-    printf("[TRACE] msg_delete - msgid = '%d'\n", msgid);
+    int i, msgcount;
+    Message messages[MSG_MAX_STORAGE];
+    char listbuf[MSG_TOSTRING_SIZE * MSG_MAX_STORAGE] = "";
     
-    /* TODO: implement  */
+    printf("[TRACE] msg_delete - msgid = '%d'\n", msgid);    
+    msgcount = msg_retrieve_some(messages, MSG_MAX_STORAGE);
+    for(i = msgid - 1; i < msgcount - 1; ++i) messages[i] = messages[i + 1];
+    msg_arraytostring(messages, msgcount, listbuf);
+
+    /* truncate file */
     
+    fseek(db, 0L, SEEK_SET);
+    fprintf(db, "%s", listbuf);
 }
