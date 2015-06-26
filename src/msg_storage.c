@@ -8,7 +8,6 @@
 
 #define NO_OF_MSG_FIELDS 3
 
-static const Message empty_msg;
 
 static FILE* db;
 
@@ -24,11 +23,6 @@ msg_trace(const Message msg)
             msg.from, msg.subject, msg.body);    
 }
 
-void
-msg_tostring(const Message msg, char buf[MSG_TOSTRING_SIZE])
-{
-    sprintf(buf, "%s\n%s\n%s\n\n", msg.from, msg.subject, msg.body);
-}
 
 void
 msg_arraytostring(const Message* msg, const int array_size, char *buf)
@@ -40,7 +34,7 @@ msg_arraytostring(const Message* msg, const int array_size, char *buf)
     for (i = 0; i < array_size; ++msg, ++i) {
         memset(msgbuf, 0, MSG_TOSTRING_SIZE);
         msg_trace(*msg);
-        msg_tostring(*msg, msgbuf);
+        sprintf(msgbuf, "%s\n%s\n%s\n\n", msg->from, msg->subject, msg->body);
         buf_idx += sprintf(buf + buf_idx, "%s", msgbuf);
         printf("[TRACE] buf = '%s', buf_idx = '%d'\n", buf, buf_idx);
     }
@@ -83,13 +77,14 @@ int
 msg_retrieve_some(Message* ret, const int count)
 {
     int i;
-    Message *msg;
+    Message *msg = NULL;
     
     fseek(db, 0L, SEEK_SET);
     for (i = 0; i < count; ++i) {
         msg = retrieve_one_or_die();
         if (msg == NULL) break;
         ret[i] = *msg;
+        free(msg);
     }
     return i;
 }
@@ -97,7 +92,7 @@ msg_retrieve_some(Message* ret, const int count)
 static Message*
 retrieve_one_or_die(void)
 {
-    int fscanf_res;
+    int fscanf_res = 0;
     Message *msgptr;
     
     msgptr = calloc(1, sizeof(Message));

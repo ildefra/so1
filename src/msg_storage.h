@@ -12,12 +12,11 @@ typedef struct {
     char subject[TXT_MAXLEN];
     char body[TXT_MAXLEN];
 } Message;
+static const Message empty_message;
 
 
 /* Prints the given message (for debugging purposes)  */
 extern void msg_trace(const Message msg);
-
-extern void msg_tostring(const Message, char[MSG_TOSTRING_SIZE]);
 
 /* Writes a Message array <msg> of <array_size> elements into <buf>  */
 extern void

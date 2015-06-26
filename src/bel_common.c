@@ -24,7 +24,7 @@ static ssize_t do_send_or_die(const int, const char* const, const size_t);
 void
 bel_close_or_die(const int fd)
 {
-    int close_result;
+    int close_result = 0;
     
     if (fd < 0) return;
     printf("[DEBUG] closing file with fd = '%d'\n", fd);
@@ -55,8 +55,8 @@ bel_getaddrinfo_or_die(
         struct addrinfo **servinfo)
 {
     char port_str[PORT_MAXCHARS] = "";
-    struct addrinfo hints;
-    int getaddrinfo_res;
+    struct addrinfo hints = {0};
+    int getaddrinfo_res = 0;
     const char* const err_msg = "[FATAL] getaddrinfo(): %s\n";
     
     printf("[TRACE] inside bel_getaddrinfo_or_die\n");
@@ -73,12 +73,10 @@ bel_getaddrinfo_or_die(
 static struct addrinfo
 make_hints(const int protocol)
 {
-    struct addrinfo hints;
+    struct addrinfo hints = {0};
     
-    memset(&hints, 0, sizeof(hints));
     hints.ai_family     = protocol;
     hints.ai_socktype   = SOCK_STREAM;
-    
     return hints;
 }
 
@@ -104,7 +102,7 @@ bel_print_address(const char* const prefix, const struct sockaddr *sa)
 static void*
 get_inaddr(const struct sockaddr *sa)
 {
-    void *in_addr;
+    void *in_addr = NULL;
     const char* const err_msg = "[ERROR] unrecognized address family '%d'\n";
     
     switch (sa->sa_family) {
@@ -141,8 +139,8 @@ void
 bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
 {
     char *ptr = NULL;
-    size_t  bytes_left;
-    ssize_t bytes_read;
+    size_t  bytes_left = 0;
+    ssize_t bytes_read = 0;
     
     printf("[TRACE] bel_recvall_or_die - buf = '%s', len = '%lu'\n",
             buf, (unsigned long) len);
@@ -163,7 +161,7 @@ bel_recvall_or_die(const int sockfd, char *buf, const size_t len)
  */
 static ssize_t
 do_recv_or_die(const int sockfd, char *buf, const size_t len) {
-    ssize_t bytes_read;
+    ssize_t bytes_read = 0;
     
     printf("[TRACE] do_recv_or_die - buf = '%s', len = '%lu'\n",
             buf, (unsigned long) len);
@@ -184,8 +182,8 @@ do_recv_or_die(const int sockfd, char *buf, const size_t len) {
 void
 bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
 {
-    size_t  bytes_left;
-    ssize_t bytes_sent;
+    size_t  bytes_left = 0;
+    ssize_t bytes_sent = 0;
 
     printf("[TRACE] bel_sendall_or_die - buf = '%s', len = '%lu'\n",
             buf, (unsigned long) len);    
@@ -207,7 +205,7 @@ bel_sendall_or_die(const int sockfd, const char* const buf, const size_t len)
  */
 static ssize_t
 do_send_or_die(const int sockfd, const char* const buf, const size_t len) {
-    ssize_t bytes_sent;
+    ssize_t bytes_sent = 0;
     
     printf("[TRACE] do_send_or_die - buf = '%s', len = '%lu'\n",
             buf, (unsigned long) len);

@@ -34,7 +34,7 @@ typedef struct {
     char descr[MENU_DESCR_MAXLEN];
     
     Action action;
-} MenuItem, *Menu;
+} MenuItem;
 
 
 static void connect_to(const char* const, const u_short);
@@ -56,10 +56,10 @@ static void send_user_input_to_server(const char* const, const int);
 
 
 const MenuItem menu[NO_OF_MENUITEMS] = {
-        {"read", "read all messages", read_all_messages},
-        {"send", "send new message", send_new_message},
-        {"delete", "deletes a message", delete_message},
-        {"quit", "quits program", user_quit}
+        {"read",    "read all messages",    read_all_messages},
+        {"send",    "send new message",     send_new_message},
+        {"delete",  "deletes a message",    delete_message},
+        {"quit",    "quits program",        user_quit}
         };
 
 
@@ -104,7 +104,7 @@ main(int argc, char **argv)
 static void
 connect_to(const char* const ip, const u_short port)
 {
-    int do_connect_res;
+    int do_connect_res = 0;
     struct addrinfo *servinfo = NULL, *currinfo = NULL;
     
     bel_getaddrinfo_or_die(ip, AF_UNSPEC, port, &servinfo);
@@ -128,7 +128,7 @@ connect_to(const char* const ip, const u_short port)
 static int
 do_connect(struct addrinfo *ainfo)
 {
-	int connect_res;
+	int connect_res = 0;
 	const char* const conn_msg  = "[INFO] connecting to ";
     
     sockfd = bel_new_sock(*ainfo);
@@ -165,7 +165,7 @@ authenticate(void)
 static void
 run_client(void)
 {
-    Action menu_action;
+    Action menu_action = NULL;
     
     for (;;) {
         show_menu();
@@ -197,7 +197,7 @@ show_menu(void)
 static Action
 read_action_from_user(void)
 {
-    int i;
+    int i = 0;
     char input_buf[MENU_NAME_MAXLEN + 1] = "";  /* +1 for \n  */
 
     printf("\nEnter a command: ");
@@ -260,11 +260,12 @@ delete_message(void)
     if(!ok_from_server()) {
         printf("KO answer from server: cannot delete");
         return;
-    }    
+    }
     printf("Here are your messages:\n");
     bel_recvall_or_die(sockfd, my_messages, LIST_MSGLEN);
     printf("%s", my_messages);
-    send_user_input_to_server("Enter the message to delete", ID_MSGLEN);
+    send_user_input_to_server(
+            "Enter the ID of the message to delete", ID_MSGLEN);
     printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
 }
 

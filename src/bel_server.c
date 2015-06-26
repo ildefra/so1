@@ -29,6 +29,7 @@ typedef struct {
     char uname[UNAME_MSGLEN];
     char pword[PWORD_MSGLEN];
 } Credentials;
+static const Credentials empty_credentials;
 
 typedef struct {
     char name[CMD_MSGLEN];
@@ -108,7 +109,7 @@ main(void)
 static void
 bind_to_port(const u_short port)
 {
-    int do_bind_res;
+    int do_bind_res = 0;
     struct addrinfo *servinfo = NULL, *currinfo = NULL;
 
     bel_getaddrinfo_or_die(NULL, AF_INET, port, &servinfo);
@@ -132,7 +133,7 @@ bind_to_port(const u_short port)
 static int
 do_bind(struct addrinfo *ainfo)
 {
-	int bind_res;
+	int bind_res = 0;
     const char* const bind_msg  = "[INFO] binding to ";
     
     sockfd = bel_new_sock(*ainfo);
@@ -212,7 +213,7 @@ static int
 accept_incoming(void)
 {
     int addrlen;
-    struct sockaddr_storage client_addr;
+    struct sockaddr_storage client_addr = {0};
 
     const char* const conn_msg = "[INFO] incoming connection from ";
     const char* const debug_msg =
@@ -232,7 +233,7 @@ accept_incoming(void)
 static void
 handle_client(void)
 {
-    Action command;
+    Action command = NULL;
     
     authenticate_or_die();
     for(;;) {
@@ -254,7 +255,7 @@ handle_client(void)
 static void
 authenticate_or_die(void)
 {
-    Credentials login;
+    Credentials login = empty_credentials;
     
     bel_recvall_or_die(sockfd_acc, login.uname, UNAME_MSGLEN);
     bel_recvall_or_die(sockfd_acc, login.pword, PWORD_MSGLEN);
@@ -324,9 +325,8 @@ handle_read(void)
 static void
 handle_send(void)
 {
-    Message msg;
+    Message msg = empty_message;
     
-    memset(&msg, 0, sizeof(msg));
     strcpy(msg.from, current_user);
     bel_recvall_or_die(sockfd_acc, msg.subject, TXT_MSGLEN);
     bel_recvall_or_die(sockfd_acc, msg.body,    TXT_MSGLEN);
@@ -343,7 +343,7 @@ handle_delete(void)
 {
     char id_buf[ID_MSGLEN] = "";
     char *endptr = NULL;
-    long id;
+    long id = 0L;
     
     handle_read();
     bel_recvall_or_die(sockfd_acc, id_buf, ID_MSGLEN);
