@@ -4,6 +4,7 @@
 
 #include "msg_storage.h"
 #include <stdlib.h>
+#include <string.h>
 
 #define NO_OF_MSG_FIELDS 3
 
@@ -19,7 +20,7 @@ static Message* retrieve_one_or_die(void);
 void
 msg_trace(const Message msg)
 {
-    printf("[TRACE] from = '%s', subject = '%s', body='%s'\n",
+    printf("[TRACE] from = '%s', subject = '%s', body = '%s'\n",
             msg.from, msg.subject, msg.body);    
 }
 
@@ -32,15 +33,16 @@ msg_tostring(const Message msg, char buf[MSG_TOSTRING_SIZE])
 void
 msg_arraytostring(const Message* msg, const int array_size, char *buf)
 {
-    int i, buf_idx;
+    int i, buf_idx = 0;
     char msgbuf[MSG_TOSTRING_SIZE];
-    
-    printf("[TRACE] msg_arraytostring - array_size = '%d', buf='%s'\n",
-            array_size, buf);
+
+    printf("[TRACE] msg_arraytostring - array_size = '%d'\n", array_size);
     for (i = 0; i < array_size; ++msg, ++i) {
         memset(msgbuf, 0, MSG_TOSTRING_SIZE);
+        msg_trace(*msg);
         msg_tostring(*msg, msgbuf);
         buf_idx += sprintf(buf + buf_idx, "%s", msgbuf);
+        printf("[TRACE] buf = '%s', buf_idx = '%d'\n", buf, buf_idx);
     }
 }
 
@@ -118,5 +120,8 @@ retrieve_one_or_die(void)
 void
 msg_delete(const int msgid)
 {
+    printf("[TRACE] msg_delete - msgid = '%d'\n", msgid);
+    
     /* TODO: implement  */
+    
 }
