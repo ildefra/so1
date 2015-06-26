@@ -19,6 +19,8 @@
 
 #define NO_OF_COMMANDS 3
 
+#define DB_FILENAME "db.txt"
+
 /* How many messages can be read at once  */
 #define MSG_LIST_SIZE 10
 
@@ -49,7 +51,6 @@ static Action receive_client_command(void);
 static void handle_read(void);
 static void handle_send(void);
 static void handle_delete(void);
-static void send_filtered_message_list(void);
 
 
 /*
@@ -94,6 +95,7 @@ main(void)
     printf("server listening on port %d\n", COMM_PORT);
     
     do_listen_or_die();
+    msg_init_db_or_die(DB_FILENAME);
     server_loop();
     return EXIT_SUCCESS;
 }
@@ -300,7 +302,7 @@ receive_client_command(void)
     for(i = 0; i < NO_OF_COMMANDS; ++i) {
         if (strcmp(cmd, commands[i].name) == 0) return commands[i].action;
     }
-    printf("[WARN] unrecognized message '%s'\n", cmd);
+    fprintf(stderr, "[WARN] unrecognized message '%s'\n", cmd);
     return NULL;
 }
 
@@ -308,17 +310,13 @@ receive_client_command(void)
 static void
 handle_read(void)
 {
-    int i, msgcount, buf_idx;
+    int msgcount;
     Message messages[MSG_LIST_SIZE];
-    char msgbuf[MSG_TOSTRING_SIZE];
     char listbuf[MSG_TOSTRING_SIZE * MSG_LIST_SIZE] = "";
     
     msgcount = msg_retrieve_some(messages, MSG_LIST_SIZE);
-    for (i = 0; i < msgcount; ++i) {
-        memset(msgbuf, 0, MSG_TOSTRING_SIZE);
-        msg_tostring(messages[i], msgbuf);
-        buf_idx += sprintf(listbuf + buf_idx, "%s", msgbuf);
-    }
+    msg_arraytostring(messages, msgcount, listbuf);
+    
     bel_sendall_or_die(sockfd_acc, listbuf, LIST_MSGLEN);
 }
 
@@ -343,30 +341,18 @@ handle_send(void)
 static void
 handle_delete(void)
 {
-    char msg_id[ID_MSGLEN] = "";
+    char id_buf[ID_MSGLEN] = "";
+    char *endptr = NULL;
+    long id;
     
-    send_filtered_message_list();
-    bel_recvall_or_die(sockfd_acc, msg_id, ID_MSGLEN);
-    
-    /* delete on file */
-    
-    bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
-}
-
-/* TODO: SPLIT!  */
-static void
-send_filtered_message_list(void)
-{
-    int msgcount;
-    Message messages[MSG_LIST_SIZE];
-    char listbuf[MSG_TOSTRING_SIZE * MSG_LIST_SIZE] = "";
-    
-    msgcount = msg_retrieve_some(messages, MSG_LIST_SIZE);
-    
-    /* filter messages this way
-    if (strcmp(current_user, user) == 0) {
+    handle_read();
+    bel_recvall_or_die(sockfd_acc, id_buf, ID_MSGLEN);
+    id = strtol(id_buf, &endptr, 10);   /* 10 is the base   */
+    if (*endptr) {  /* could not convert entire string  */
+        fprintf(stderr, "[WARN] received non-numeric id '%s'\n", id_buf);
+        bel_sendall_or_die(sockfd_acc, ANSWER_KO, ANSWER_MSGLEN);
+    } else {
+        msg_delete(id);
+        bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
     }
-    */
-    
-    bel_sendall_or_die(sockfd_acc, listbuf, LIST_MSGLEN);
 }

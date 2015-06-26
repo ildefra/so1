@@ -19,6 +19,18 @@ extern void msg_trace(const Message msg);
 
 extern void msg_tostring(const Message, char[MSG_TOSTRING_SIZE]);
 
+/* Writes a Message array <msg> of <array_size> elements into <buf>  */
+extern void
+msg_arraytostring(const Message* msg, const int array_size, char *buf);
+
+
+/*
+ * Creates the database file at the specified location if it does not exist
+ * yet. To be called before any store or retrieve operation.
+ * Exits on failure
+ */
+extern void msg_init_db_or_die(const char* const);
+
 /* Stores <msg> in the last position of the database  */
 extern void msg_store(const Message msg);
 
@@ -28,5 +40,7 @@ extern void msg_store(const Message msg);
  * Returns the number of filled items
  */
 extern int msg_retrieve_some(Message* buf, const int count);
+
+extern void msg_delete(const int);
 
 #endif	/* MSGSTORAGE_H_INCLUDED */

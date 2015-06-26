@@ -224,15 +224,16 @@ static void
 read_all_messages(void)
 {
     char all_messages[LIST_MSGLEN] = "";
+    const char* const no_msgs = "There are no messages to read.\n";
     
     printf("[TRACE] inside read_all_messages\n");
     bel_sendall_or_die(sockfd, CMD_READ, CMD_MSGLEN);
     if(!ok_from_server()) {
         printf("KO answer from server: cannot read");
         return;
-    }    
+    }
     bel_recvall_or_die(sockfd, all_messages, LIST_MSGLEN);
-    printf("%s", all_messages);
+    printf("%s", strcmp("", all_messages) != 0 ? all_messages : no_msgs);
 }
 
 static void
