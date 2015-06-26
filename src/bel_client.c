@@ -56,10 +56,10 @@ static void reset_stdin(void);
 
 
 const MenuItem menu[NO_OF_MENUITEMS] = {
-        {"read",    "read all messages",    read_all_messages},
-        {"send",    "send new message",     send_new_message},
-        {"delete",  "deletes a message",    delete_message},
-        {"quit",    "quits program",        user_quit}
+        {"read",    "read all messages",            read_all_messages},
+        {"send",    "send new message",             send_new_message},
+        {"delete",  "deletes a message of yours",   delete_message},
+        {"quit",    "quits this program",           user_quit}
         };
 
 
@@ -236,13 +236,15 @@ send_new_message(void)
     }
     send_user_input_to_server("Subject", TXT_MSGLEN);
     send_user_input_to_server("Body", TXT_MSGLEN);
-    printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
+    printf(ok_from_server()
+            ? "Message was successfully saved\n"
+            : "Could not save the message\n");
 }
 
 static void
 delete_message(void)
 {
-    char my_messages[LIST_MSGLEN] = "";
+    char messages[LIST_MSGLEN] = "";
     
     printf("[TRACE] inside delete_message\n");
     bel_sendall_or_die(sockfd, CMD_DELETE, CMD_MSGLEN);
@@ -250,12 +252,13 @@ delete_message(void)
         printf("KO answer from server: cannot delete");
         return;
     }
-    printf("Here are your messages:\n");
-    bel_recvall_or_die(sockfd, my_messages, LIST_MSGLEN);
-    printf("%s", my_messages);
+    bel_recvall_or_die(sockfd, messages, LIST_MSGLEN);
+    printf("%s", messages);
     send_user_input_to_server(
             "Enter the ID of the message to delete", ID_MSGLEN);
-    printf("Server returned %s\n", ok_from_server() ? ANSWER_OK : ANSWER_KO);
+    printf(ok_from_server()
+            ? "The selected message was successfully deleted\n"
+            : "Message was NOT deleted. Are you authorized?\n");
 }
 
 static void
@@ -308,7 +311,10 @@ send_user_input_to_server(const char* const prompt_msg, const int buf_len)
 }
 
 
-/* Discards all the characters still pending in the stdin buffer  */
+/*
+ * TRIES HARD to discard all the characters still pending in the stdin buffer.
+ * This only works on some systems, however.
+ */
 static void
 reset_stdin(void)
 {

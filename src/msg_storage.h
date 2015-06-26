@@ -43,7 +43,10 @@ extern void msg_store(const Message msg);
  */
 extern int msg_retrieve_some(Message* buf, const int count);
 
-/* Deletes the nth message from the database  */
-extern void msg_delete(const int);
+/*
+ * Deletes the nth message from the database if it is from the given user.
+ * Returns 1 (true) on success and 0 (false) on failure.
+ */
+int msg_delete(const char[FROM_MAXLEN], const int);
 
 #endif	/* MSGSTORAGE_H_INCLUDED */

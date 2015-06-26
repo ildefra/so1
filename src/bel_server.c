@@ -53,6 +53,9 @@ static void handle_read(void);
 static void handle_send(void);
 static void handle_delete(void);
 
+static void send_ok(void);
+static void send_ko(void);
+
 
 /*
  * (file descriptor of) the main server socket, which handles new client
@@ -239,9 +242,9 @@ handle_client(void)
     for(;;) {
         command = receive_client_command();
         if (command == NULL) {
-            bel_sendall_or_die(sockfd_acc, ANSWER_KO, ANSWER_MSGLEN);
+            send_ko();
         } else {
-            bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+            send_ok();
             command();
         }
     }
@@ -260,11 +263,11 @@ authenticate_or_die(void)
     bel_recvall_or_die(sockfd_acc, login.uname, UNAME_MSGLEN);
     bel_recvall_or_die(sockfd_acc, login.pword, PWORD_MSGLEN);
     if(!is_valid_login(login)) {
-        bel_sendall_or_die(sockfd_acc, ANSWER_KO, ANSWER_MSGLEN);
+        send_ko();
         exit(EXIT_SUCCESS);
     }
     strcpy(current_user, login.uname);
-    bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+    send_ok();
 }
 
 /*
@@ -333,9 +336,8 @@ handle_send(void)
     
     msg_trace(msg);
     msg_store(msg);
-    bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+    send_ok();
 }
-
 
 
 static void
@@ -350,9 +352,21 @@ handle_delete(void)
     id = strtol(id_buf, &endptr, 10);   /* 10 is the base   */
     if (*endptr) {  /* could not convert entire string  */
         fprintf(stderr, "[WARN] received non-numeric id '%s'\n", id_buf);
-        bel_sendall_or_die(sockfd_acc, ANSWER_KO, ANSWER_MSGLEN);
+        send_ko();
     } else {
-        msg_delete(id);
-        bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+        if(msg_delete(current_user, id)) send_ok(); else send_ko();
     }
+}
+
+
+static void
+send_ok(void)
+{
+    bel_sendall_or_die(sockfd_acc, ANSWER_OK, ANSWER_MSGLEN);
+}
+
+static void
+send_ko(void)
+{
+    bel_sendall_or_die(sockfd_acc, ANSWER_KO, ANSWER_MSGLEN);
 }

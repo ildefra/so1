@@ -123,8 +123,8 @@ retrieve_one_or_die(void)
 }
 
 
-void
-msg_delete(const int msgid)
+int
+msg_delete(const char username[FROM_MAXLEN], const int msgid)
 {
     int i, msgcount;
     Message messages[MSG_MAX_STORAGE];
@@ -132,12 +132,16 @@ msg_delete(const int msgid)
     
     printf("[TRACE] msg_delete - msgid = '%d'\n", msgid);
     msgcount = msg_retrieve_some(messages, MSG_MAX_STORAGE);
+    if (strcmp(username, messages[msgid - 1].from) != 0 /* not authorized  */
+            || msgid < 1 || msgid > msgcount) {         /* out of range  */
+        return 0;   /* false  */
+    }
     for(i = msgid - 1; i < msgcount - 1; ++i) messages[i] = messages[i + 1];
     msg_arraytostring(messages, msgcount - 1, listbuf);
-    printf("[TRACE] msgcount = '%d', listbuf = '%s'\n", msgcount, listbuf);
     truncate_db();
     fseek(db, 0L, SEEK_SET);
     fprintf(db, "%s", listbuf);
+    return 1;   /* true  */
 }
 
 
